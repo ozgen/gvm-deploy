@@ -1,0 +1,29 @@
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# --- Go build artifacts (if you keep Go code here too) ---
+bin/
+dist/
+coverage.*
+*.out
+
+# --- Helm / charts ---
+# keep Chart.lock (commit it), but ignore downloaded / packaged deps
+charts/**/charts/*.tgz
+charts/**/tmp/
+*.tgz
+
+# generated manifests
+*.yaml.generated
+gvm-lite-stack.yaml
+
+# --- Kubernetes local overrides / secrets ---
+.env
+.env.*
+values*.local.yaml
+values*.override.yaml
+secrets/

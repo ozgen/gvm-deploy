@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gsa-lite-config
+  namespace: {{ .Release.Namespace }}
+data:
+  # ----------- NGINX proxy target -----------
+  BACKEND_ORIGIN: {{ default "" .Values.gsaLite.config.backendOrigin | quote }}
+
+  # ----------- frontend runtime config (config.js) -----------
+  BACKEND_HOST: {{ default "" .Values.gsaLite.config.backendHost | quote }}
+  AUTH_BASE_PATH: {{ default "/auth" .Values.gsaLite.config.authBasePath | quote }}
+  API_BASE_PATH: {{ default "/api/v1" .Values.gsaLite.config.apiBasePath | quote }}
+
+  # i18n
+  DEFAULT_LANGUAGE: {{ default "en" .Values.gsaLite.config.defaultLanguage | quote }}
+  SUPPORTED_LANGUAGES: {{ toJson (default (list "en" "de") .Values.gsaLite.config.supportedLanguages) | quote }}
+
+  # Storage keys
+  TOKEN_STORAGE_KEY: {{ default "gsa-lite-access-token" .Values.gsaLite.config.tokenKey | quote }}
+  REFRESH_TOKEN_STORAGE_KEY: {{ default "gsa-lite-refresh-token" .Values.gsaLite.config.refreshTokenKey | quote }}

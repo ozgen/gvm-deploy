@@ -156,3 +156,52 @@ gvmdLite:
     FEED_VT_METADATA_PATH: "/var/lib/openvas/plugins/vt-metadata.json"
     FEED_SCAN_CONFIG_DIR: ""
     LOG_LEVEL: "info"
+
+gsaLite:
+  replicas: 1
+
+  image:
+    repository: gsa-lite
+    tag: prod
+    pullPolicy: IfNotPresent
+
+  containerPort: 80
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+  readiness:
+    path: /healthz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 30080
+
+  podSecurityContext:
+    runAsNonRoot: true
+    fsGroup: 101
+    fsGroupChangePolicy: OnRootMismatch
+
+  containerSecurityContext:
+    runAsUser: 101
+    runAsGroup: 101
+    allowPrivilegeEscalation: false
+
+  # runtime config written into ConfigMap
+  config:
+    backendOrigin: "http://gvmd-lite.gvm.svc.cluster.local:8082"  # nginx proxy target
+    backendHost: ""
+    authBasePath: "/auth"
+    apiBasePath: "/api/v1"
+    defaultLanguage: "en"
+    supportedLanguages: ["en","de"]
+    tokenKey: "gsa-lite-access-token"
+    refreshTokenKey: "gsa-lite-refresh-token"

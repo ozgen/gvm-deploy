@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gsa-lite
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: gsa-lite
+spec:
+  replicas: {{ .Values.gsaLite.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: gsa-lite
+  template:
+    metadata:
+      labels:
+        app: gsa-lite
+    spec:
+      containers:
+        - name: web
+          image: "{{ .Values.gsaLite.image.repository | default "gsa-lite" }}:{{ .Values.gsaLite.image.tag | default "prod" }}"
+          imagePullPolicy: {{ .Values.gsaLite.image.pullPolicy | default "IfNotPresent" | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.gsaLite.configMapName | default "gsa-lite-config" | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.gsaLite.containerPort | default 80 }}
+          resources:
+{{ toYaml (default (dict "requests" (dict "cpu" "100m" "memory" "128Mi") "limits" (dict "cpu" "200m" "memory" "256Mi")) .Values.gsaLite.resources) | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.gsaLite.readiness.path | default "/healthz" | quote }}
+              port: http
+            initialDelaySeconds: {{ .Values.gsaLite.readiness.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.gsaLite.readiness.periodSeconds | default 10 }}

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gsa-lite
+  namespace: {{ .Release.Namespace }}
+  labels: { app: gsa-lite }
+spec:
+  type: {{ .Values.gsaLite.service.type }}
+  selector:
+    app: gsa-lite
+  ports:
+    - name: http
+      port: {{ .Values.gsaLite.service.port }}
+      targetPort: http
+      {{- if and (eq .Values.gsaLite.service.type "NodePort") .Values.gsaLite.service.nodePort }}
+      nodePort: {{ .Values.gsaLite.service.nodePort }}
+      {{- end }}

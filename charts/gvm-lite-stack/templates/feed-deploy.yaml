@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feed-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: feed-service }
+  template:
+    metadata:
+      labels: { app: feed-service }
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.feed.fsGroup | default 1000 }}
+        fsGroupChangePolicy: {{ .Values.feed.fsGroupChangePolicy | default "OnRootMismatch" | quote }}
+
+      initContainers:
+        - name: prep-volumes
+          image: {{ .Values.feed.init.image | default "busybox:1.36" | quote }}
+          securityContext:
+            runAsUser: 0
+          command:
+            - sh
+            - -c
+            - |
+              set -eux
+              # Notus
+              mkdir -p /var/lib/notus/products
+              chmod 0775 /var/lib/notus /var/lib/notus/products
+              # OpenVAS plugins
+              mkdir -p /var/lib/openvas/plugins
+              chmod 0775 /var/lib/openvas /var/lib/openvas/plugins
+              # Logs
+              mkdir -p /var/log/feedsync
+              chmod 0775 /var/log/feedsync
+          volumeMounts:
+            - { name: plugins, mountPath: /var/lib/openvas/plugins }
+            - { name: notus,   mountPath: /var/lib/notus }
+            - { name: logs,    mountPath: /var/log/feedsync }
+
+      containers:
+        - name: feed
+          image: "{{ .Values.feed.image.repository }}:{{ .Values.feed.image.tag }}"
+          imagePullPolicy: {{ .Values.feed.image.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: true
+          env:
+            - name: TZ
+              value: {{ .Values.feed.tz | quote }}
+            {{- if .Values.feed.rsyncTempDir }}
+            - name: RSYNC_TMP
+              value: {{ .Values.feed.rsyncTempDir | quote }}
+            {{- end }}
+          volumeMounts:
+            - { name: plugins, mountPath: /var/lib/openvas/plugins }
+            - { name: notus,   mountPath: /var/lib/notus }
+            - { name: logs,    mountPath: /var/log/feedsync }
+          readinessProbe:
+            exec:
+              command: [ "sh","-c","test -f /var/lib/openvas/plugins/.feedsync_ready" ]
+            initialDelaySeconds: {{ .Values.feed.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.feed.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.feed.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.feed.readiness.failureThreshold }}
+          livenessProbe:
+            exec:
+              command: [ "sh","-c","test -f /var/lib/openvas/plugins/.feedsync_ready" ]
+            initialDelaySeconds: {{ .Values.feed.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.feed.liveness.periodSeconds }}
+      volumes:
+        - name: plugins
+          persistentVolumeClaim: { claimName: {{ .Values.feed.pvc.plugins.name }} }
+        - name: notus
+          persistentVolumeClaim: { claimName: {{ .Values.feed.pvc.notus.name }} }
+        - name: logs
+          persistentVolumeClaim: { claimName: {{ .Values.feed.pvc.logs.name }} }

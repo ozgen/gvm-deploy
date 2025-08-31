@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gvmd-lite
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: gvmd-lite
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gvmd-lite
+  template:
+    metadata:
+      labels:
+        app: gvmd-lite
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.gvmdLite.image.repository }}:{{ .Values.gvmdLite.image.tag }}"
+          imagePullPolicy: {{ .Values.gvmdLite.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.gvmdLite.service.port }}
+
+          env:
+            # ---- Database (external if enabled, else Bitnami subchart) ----
+            - name: DB_HOST
+              value: {{ ternary .Values.gvmdLite.externalDb.host (printf "%s-postgresql.%s.svc.%s" .Release.Name .Release.Namespace (default "cluster.local" .Values.clusterDomain)) (default false .Values.gvmdLite.externalDb.enabled) | quote }}
+            - name: DB_PORT
+              value: {{ ternary (printf "%v" .Values.gvmdLite.externalDb.port) "5432" (default false .Values.gvmdLite.externalDb.enabled) | quote }}
+            - name: DB_USER
+              value: {{ ternary .Values.gvmdLite.externalDb.user (default "postgres" .Values.postgresql.auth.username) (default false .Values.gvmdLite.externalDb.enabled) | quote }}
+            - name: DB_NAME
+              value: {{ ternary .Values.gvmdLite.externalDb.name (default "postgres" .Values.postgresql.auth.database) (default false .Values.gvmdLite.externalDb.enabled) | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+{{- if .Values.gvmdLite.externalDb.enabled }}
+                  name: {{ required "gvmdLite.externalDb.passwordSecretName is required when externalDb.enabled=true" .Values.gvmdLite.externalDb.passwordSecretName }}
+                  key: {{ default "DB_PASSWORD" .Values.gvmdLite.externalDb.passwordSecretKey }}
+{{- else }}
+                  name: {{ printf "%s-postgresql" .Release.Name }}
+                  key: {{ if eq (default "postgres" .Values.postgresql.auth.username) "postgres" }}postgres-password{{ else }}password{{ end }}
+{{- end }}
+
+            # ---- Scanner (FQDN from service + namespace) ----
+            - name: SCANNER_HOST
+              value: {{ printf "%s.%s.svc.%s" .Values.scanner.service.name .Release.Namespace (default "cluster.local" .Values.clusterDomain) | quote }}
+            - name: SCANNER_PORT
+              value: "{{ .Values.scanner.service.port }}"
+
+            # ---- App config ----
+            - name: SERVER_PORT
+              value: "{{ .Values.gvmdLite.service.port }}"
+            - name: JWT_TOKEN_TIME
+              value: {{ .Values.gvmdLite.env.JWT_TOKEN_TIME | quote }}
+            - name: REFRESH_TOKEN_TIME
+              value: {{ .Values.gvmdLite.env.REFRESH_TOKEN_TIME | quote }}
+            - name: ENABLE_CVSS3_1
+              value: {{ .Values.gvmdLite.env.ENABLE_CVSS3_1 | quote }}
+            - name: FEED_VT_METADATA_PATH
+              value: {{ .Values.gvmdLite.env.FEED_VT_METADATA_PATH | quote }}
+            - name: FEED_SCAN_CONFIG_DIR
+              value: {{ .Values.gvmdLite.env.FEED_SCAN_CONFIG_DIR | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.gvmdLite.env.LOG_LEVEL | quote }}
+          resources:
+            {{- toYaml .Values.gvmdLite.resources | nindent 12 }}
+
+          readinessProbe:
+            httpGet:
+              path: /api/public/documentation/index.html
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /api/public/documentation/index.html
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: plugins
+              mountPath: /var/lib/openvas/plugins
+
+      volumes:
+        - name: plugins
+          persistentVolumeClaim:
+            claimName: {{ default .Values.feed.pvc.plugins.name .Values.gvmdLite.pvcPluginsName }}

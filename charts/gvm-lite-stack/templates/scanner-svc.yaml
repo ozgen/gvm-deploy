@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.scanner.service.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: openvas-service
+  ports:
+    - name: scanner
+      port: {{ .Values.scanner.service.port }}
+      targetPort: scanner
+  type: {{ .Values.scanner.service.type }}

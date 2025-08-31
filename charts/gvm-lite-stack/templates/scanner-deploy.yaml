@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openvas-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: openvas-service }
+  template:
+    metadata:
+      labels: { app: openvas-service }
+    spec:
+      serviceAccountName: {{ .Values.scanner.saName }}
+      {{- if .Values.scanner.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+
+      initContainers:
+        - name: stage-tools-if-needed
+          image: "{{ .Values.scanner.image.repository }}:{{ .Values.scanner.image.tag }}"
+          command: ["/bin/sh","-lc"]
+          args:
+            - |
+              set -Eeuo pipefail
+              ensure_dir() { mkdir -p "$1"; }
+              is_noexec_mount() {
+                local p="$1" mp
+                mp="$(awk -v t="$p" 'BEGIN{best="/"} { if (index(t,$2)==1 && length($2) > length(best)) best=$2 } END{print best}' /proc/mounts)"
+                grep -E "[[:space:]]$mp[[:space:]]" /proc/mounts | grep -q 'noexec'
+              }
+              exec_eprem() {
+                local bin="$1"
+                "$bin" --version >/dev/null 2>&1 && return 0
+                out="$(sh -c "$bin --version" 2>&1 || true)"
+                echo "$out" | grep -qi 'operation not permitted' && return 10 || return 1
+              }
+              stage_openvas() {
+                if ! command -v openvas >/dev/null 2>&1; then
+                  echo "[init] openvas not found; skipping"; return 0; fi
+                local src; src="$(command -v openvas)"; local need=0
+                if is_noexec_mount "$src"; then need=1; fi
+                exec_eprem "$src" || [ "$?" = "10" ] && need=1 || true
+                if [ "$need" = "1" ]; then
+                  echo "[init] staging openvas from $src to /tools/openvas and linking"
+                  cp -f "$src" /tools/openvas; chmod 0755 /tools/openvas
+                  ln -sf /tools/openvas /work-usr-local-sbin/openvas
+                else
+                  echo "[init] openvas executes fine from $src; no staging"
+                fi
+              }
+              stage_nmap() {
+                if ! command -v nmap >/dev/null 2>&1; then
+                  echo "[init] nmap not found; skipping"; return 0; fi
+                local src; src="$(command -v nmap)"
+                echo "[init] staging nmap from $src to /tools/nmap and /nmap-vol/nmap"
+                cp -f "$src" /tools/nmap; chmod 0755 /tools/nmap
+                mkdir -p /nmap-vol; cp -f /tools/nmap /nmap-vol/nmap
+              }
+              ensure_dir /tools
+              ensure_dir /work-usr-local-sbin
+              stage_openvas
+              stage_nmap
+          volumeMounts:
+            - { name: tools,             mountPath: /tools }
+            - { name: usr-local-sbin-vol, mountPath: /work-usr-local-sbin }
+            - { name: nmap-file,          mountPath: /nmap-vol }
+
+      containers:
+        - name: openvas
+          image: "{{ .Values.scanner.image.repository }}:{{ .Values.scanner.image.tag }}"
+          ports:
+            - { containerPort: {{ .Values.scanner.service.port }}, name: scanner }
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: true
+            capabilities:
+              add: ["NET_RAW","NET_ADMIN"]
+          env:
+            - name: PATH
+              value: "/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          volumeMounts:
+            - { name: plugins,           mountPath: /var/lib/openvas/plugins }
+            - { name: notus,             mountPath: /var/lib/notus }
+            - { name: varlog,            mountPath: /var/log }
+            - { name: redis-conf,        mountPath: /etc/redis/redis.conf, subPath: redis.conf, readOnly: true }
+            - { name: run-redis,         mountPath: /run/redis }
+            - { name: run-ospd,          mountPath: /var/run/ospd }
+            - { name: tools,             mountPath: /tools }
+            - { name: usr-local-sbin-vol, mountPath: /usr/local/sbin }
+            - { name: nmap-file,         mountPath: /usr/bin/nmap, subPath: nmap }
+
+      volumes:
+        - name: plugins
+          persistentVolumeClaim: { claimName: {{ .Values.feed.pvc.plugins.name }} }
+        - name: notus
+          persistentVolumeClaim: { claimName: {{ .Values.feed.pvc.notus.name }} }
+        - name: varlog
+          emptyDir: {}
+        - name: redis-conf
+          configMap:
+            name: openvas-redis-config
+            items:
+              - { key: redis.conf, path: redis.conf }
+        - name: run-redis
+          emptyDir: {}
+        - name: run-ospd
+          emptyDir: {}
+        - name: tools
+          emptyDir: {}
+        - name: usr-local-sbin-vol
+          emptyDir: {}
+        - name: nmap-file
+          emptyDir: {}

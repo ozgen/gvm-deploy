@@ -161,8 +161,8 @@ gsaLite:
   replicas: 1
 
   image:
-    repository: gsa-lite
-    tag: prod
+    repository: ozgenm/gsa-lite
+    tag: latest
     pullPolicy: IfNotPresent
 
   containerPort: 80

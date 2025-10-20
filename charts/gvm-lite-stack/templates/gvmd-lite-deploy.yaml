@@ -67,6 +67,72 @@ spec:
               value: {{ .Values.gvmdLite.env.LOG_LEVEL | quote }}
             - name: RUNNING_ENV
               value: "k8s"
+
+            # ---- Notifications: SMTP (non-secrets) ----
+            - name: SMTP_ENABLED
+              value: {{ .Values.gvmdLite.env.SMTP_ENABLED | quote }}
+            - name: SMTP_HOST
+              value: {{ .Values.gvmdLite.env.SMTP_HOST | quote }}
+            - name: SMTP_PORT
+              value: {{ .Values.gvmdLite.env.SMTP_PORT | quote }}
+            - name: SMTP_FROM
+              value: {{ .Values.gvmdLite.env.SMTP_FROM | quote }}
+
+            # ---- Notifications: Slack (non-secrets) ----
+            - name: SLACK_ENABLED
+              value: {{ .Values.gvmdLite.env.SLACK_ENABLED | quote }}
+
+            # ---- Notifications: Azure (non-secrets) ----
+            - name: AZURE_STORAGE_ACCOUNT_NAME
+              value: {{ .Values.gvmdLite.env.AZURE_STORAGE_ACCOUNT_NAME | quote }}
+            - name: AZURE_CONTAINER_NAME
+              value: {{ .Values.gvmdLite.env.AZURE_CONTAINER_NAME | quote }}
+            - name: AZURE_CONTAINER_ENABLED
+              value: {{ .Values.gvmdLite.env.AZURE_CONTAINER_ENABLED | quote }}
+
+            # ---- Notification secrets (only when enabled AND provided) ----
+            {{- $secName := (include "gvm-lite-stack.fullname" .) | printf "%s-gvmd-secrets" }}
+
+            # SMTP secrets
+            {{- if eq .Values.gvmdLite.env.SMTP_ENABLED "1" }}
+            {{- with .Values.gvmdLite.secrets.SMTP_USERNAME }}
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secName }}
+                  key: SMTP_USERNAME
+            {{- end }}
+            {{- with .Values.gvmdLite.secrets.SMTP_PASSWORD }}
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secName }}
+                  key: SMTP_PASSWORD
+            {{- end }}
+            {{- end }}
+
+            # Slack secret
+            {{- if eq .Values.gvmdLite.env.SLACK_ENABLED "1" }}
+            {{- with .Values.gvmdLite.secrets.SLACK_WEBHOOK_URL }}
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secName }}
+                  key: SLACK_WEBHOOK_URL
+            {{- end }}
+            {{- end }}
+
+            # Azure secret
+            {{- if eq .Values.gvmdLite.env.AZURE_CONTAINER_ENABLED "1" }}
+            {{- with .Values.gvmdLite.secrets.AZURE_CONTAINER_ACCESS_KEY }}
+            - name: AZURE_CONTAINER_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secName }}
+                  key: AZURE_CONTAINER_ACCESS_KEY
+            {{- end }}
+            {{- end }}
+
           resources:
             {{- toYaml .Values.gvmdLite.resources | nindent 12 }}
 

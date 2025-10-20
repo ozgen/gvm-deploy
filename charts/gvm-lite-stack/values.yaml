@@ -148,6 +148,11 @@ gvmdLite:
     JWT_SECRET: "your-super-secret-key"
     CREDENTIAL_ENCRYPTION_KEY: "V1cyVHd3M2FpVmZXWjBFUWdnRmU2OU4wQzBxUFR4VEc="
 
+    SMTP_USERNAME: ""
+    SMTP_PASSWORD: ""
+    SLACK_WEBHOOK_URL: ""
+    AZURE_CONTAINER_ACCESS_KEY: ""
+
     # Application env configuration
   env:
     JWT_TOKEN_TIME: "2"            # hours
@@ -156,6 +161,19 @@ gvmdLite:
     FEED_VT_METADATA_PATH: "/var/lib/openvas/plugins/vt-metadata.json"
     FEED_SCAN_CONFIG_DIR: ""
     LOG_LEVEL: "info"
+    # Email (SMTP) - default disabled
+    SMTP_ENABLED: "0"
+    SMTP_HOST: ""
+    SMTP_PORT: "587"
+    SMTP_FROM: ""
+
+    # Slack - default disabled
+    SLACK_ENABLED: "0"
+
+    # Azure - default disabled
+    AZURE_STORAGE_ACCOUNT_NAME: ""
+    AZURE_CONTAINER_NAME: ""
+    AZURE_CONTAINER_ENABLED: "0"
 
 gsaLite:
   replicas: 1

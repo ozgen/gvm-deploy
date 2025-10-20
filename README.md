@@ -41,10 +41,10 @@ helm template gvm ../gvm-lite-stack -n gvm > gvm-lite-stack.yaml
 helm template gvm charts/gvm-lite-stack -n gvm > gvm-lite-stack.yaml
 ```
 
- ```bash
- helm template gvm charts/gvm-lite-stack -n gvm \
-   -f charts/gvm-lite-stack/values.yaml > gvm-lite-stack.yaml
- ```
+```bash
+helm template gvm charts/gvm-lite-stack -n gvm \
+  -f charts/gvm-lite-stack/values.yaml > gvm-lite-stack.yaml
+```
 
 ## Deploy (default values.yaml)
 
@@ -102,6 +102,7 @@ helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
   --set feed.image.tag=dev \
   --set feed.image.pullPolicy=Always
 ```
+
 ---
 
 ## PostgreSQL Dependency
@@ -137,7 +138,6 @@ postgresql:
 This creates a StatefulSet (`gvm-postgresql-0`), a Service (`gvm-postgresql`), and a Secret (`gvm-postgresql` with the password).
 `gvmd-lite` automatically uses this internal Postgres if `postgresql.enabled=true`.
 
-
 ## External Postgres (optional)
 
 The values enable Bitnami Postgres by default. To use an **external** DB:
@@ -154,6 +154,74 @@ helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
   --set gvmdLite.externalDb.passwordSecretName="my-external-pg" \
   --set gvmdLite.externalDb.passwordSecretKey="DB_PASSWORD"
 ```
+
+---
+
+## Notification Integrations (optional)
+
+`gvmd-lite` supports optional outbound notifications via **SMTP**, **Slack**, and **Azure Blob Storage**.
+All integrations are **disabled by default** (`*_ENABLED=0`).
+
+To enable one or more integrations, set the following in `values.yaml` or via `--set-string` flags.
+
+### SMTP (Email)
+
+```yaml
+gvmdLite:
+  env:
+    SMTP_ENABLED: "1"
+    SMTP_HOST: "smtp.example.com"
+    SMTP_PORT: "587"
+    SMTP_FROM: "noreply@example.com"
+  secrets:
+    SMTP_USERNAME: "myuser"
+    SMTP_PASSWORD: "mypassword"
+```
+
+### Slack
+
+```yaml
+gvmdLite:
+  env:
+    SLACK_ENABLED: "1"
+  secrets:
+    SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/xxx/yyy/zzz"
+```
+
+### Azure Blob
+
+```yaml
+gvmdLite:
+  env:
+    AZURE_CONTAINER_ENABLED: "1"
+    AZURE_STORAGE_ACCOUNT_NAME: "myaccount"
+    AZURE_CONTAINER_NAME: "mycontainer"
+  secrets:
+    AZURE_CONTAINER_ACCESS_KEY: "myaccesskey"
+```
+
+### Default (disabled)
+
+By default, all integrations are set to `"0"` (disabled) in `values.yaml`:
+
+```yaml
+SMTP_ENABLED: "0"
+SLACK_ENABLED: "0"
+AZURE_CONTAINER_ENABLED: "0"
+```
+
+### Example: enable SMTP during install
+
+```bash
+helm upgrade --install gvm charts/gvm-lite-stack -n gvm \
+  --set-string gvmdLite.env.SMTP_ENABLED=1 \
+  --set-string gvmdLite.env.SMTP_HOST="smtp.example.com" \
+  --set-string gvmdLite.env.SMTP_FROM="noreply@example.com" \
+  --set-string gvmdLite.secrets.SMTP_USERNAME="$SMTP_USERNAME" \
+  --set-string gvmdLite.secrets.SMTP_PASSWORD="$SMTP_PASSWORD"
+```
+
+---
 
 ## Troubleshooting quickies
 

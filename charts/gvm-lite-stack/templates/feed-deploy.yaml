@@ -34,10 +34,14 @@ spec:
               # Logs
               mkdir -p /var/log/feedsync
               chmod 0775 /var/log/feedsync
+              # Report Formats
+              mkdir -p /var/lib/gvm
+              chmod 0775 /var/lib/gvm
           volumeMounts:
             - { name: plugins, mountPath: /var/lib/openvas/plugins }
             - { name: notus,   mountPath: /var/lib/notus }
             - { name: logs,    mountPath: /var/log/feedsync }
+            - { name: report-formats, mountPath: /var/lib/gvm/report-formats }
 
       containers:
         - name: feed
@@ -58,6 +62,7 @@ spec:
             - { name: plugins, mountPath: /var/lib/openvas/plugins }
             - { name: notus,   mountPath: /var/lib/notus }
             - { name: logs,    mountPath: /var/log/feedsync }
+            - { name: report-formats, mountPath: /var/lib/gvm/report-formats }
           readinessProbe:
             exec:
               command: [ "sh","-c","test -f /var/lib/openvas/plugins/.feedsync_ready" ]
@@ -77,3 +82,5 @@ spec:
           persistentVolumeClaim: { claimName: {{ .Values.feed.pvc.notus.name }} }
         - name: logs
           persistentVolumeClaim: { claimName: {{ .Values.feed.pvc.logs.name }} }
+        - name: report-formats
+          persistentVolumeClaim: { claimName: {{ .Values.feed.pvc.reportFormats.name }} }

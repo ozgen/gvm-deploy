@@ -17,6 +17,7 @@ feed:
     plugins: { name: gvm-plugins-pvc, size: 5Gi }
     notus: { name: gvm-notus-pvc,   size: 2Gi }
     logs: { name: gvm-log-pvc,     size: 1Gi }
+    reportFormats: { name: gvm-report-formats-pvc, size: 1Gi }
   readiness:
     initialDelaySeconds: 10
     periodSeconds: 30

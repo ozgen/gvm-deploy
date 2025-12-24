@@ -41,7 +41,7 @@ spec:
             - { name: plugins, mountPath: /var/lib/openvas/plugins }
             - { name: notus,   mountPath: /var/lib/notus }
             - { name: logs,    mountPath: /var/log/feedsync }
-            - { name: report-formats, mountPath: /var/lib/gvm/report-formats }
+            - { name: report-formats, mountPath: /var/lib/gvm }
 
       containers:
         - name: feed
@@ -62,7 +62,7 @@ spec:
             - { name: plugins, mountPath: /var/lib/openvas/plugins }
             - { name: notus,   mountPath: /var/lib/notus }
             - { name: logs,    mountPath: /var/log/feedsync }
-            - { name: report-formats, mountPath: /var/lib/gvm/report-formats }
+            - { name: report-formats, mountPath: /var/lib/gvm}
           readinessProbe:
             exec:
               command: [ "sh","-c","test -f /var/lib/openvas/plugins/.feedsync_ready" ]

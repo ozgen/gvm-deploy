@@ -41,3 +41,30 @@ spec:
   resources:
     requests:
       storage: {{ .Values.feed.pvc.reportFormats.size }}
+---
+{{- if and .Values.gvmrLite.enabled .Values.gvmrLite.pvc.work.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.gvmrLite.pvc.work.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.gvmrLite.pvc.work.size }}
+{{- end }}
+---
+{{- if and .Values.gvmrLite.enabled .Values.gvmdLite.exports.pvc.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.gvmdLite.exports.pvc.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.gvmdLite.exports.pvc.size }}
+{{- end }}
+

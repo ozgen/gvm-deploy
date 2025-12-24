@@ -1,0 +1,17 @@
+{{- if .Values.gvmrLite.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.gvmrLite.service.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: gvmr-lite
+spec:
+  selector:
+    app: gvmr-lite
+  ports:
+    - name: http
+      port: {{ .Values.gvmrLite.service.port }}
+      targetPort: http
+  type: {{ .Values.gvmrLite.service.type }}
+{{- end }}

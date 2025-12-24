@@ -1,0 +1,107 @@
+{{- if .Values.gvmrLite.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gvmr-lite
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: gvmr-lite }
+  template:
+    metadata:
+      labels: { app: gvmr-lite }
+    spec:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: prep-work
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 0
+          command:
+            - sh
+            - -c
+            - |
+              set -eux
+              mkdir -p /tmp/gvmr-lite/work
+              chmod 0777 /tmp/gvmr-lite/work
+          volumeMounts:
+            - { name: work, mountPath: /tmp/gvmr-lite/work }
+
+      containers:
+        - name: gvmr-lite
+          image: "{{ .Values.gvmrLite.image.repository }}:{{ .Values.gvmrLite.image.tag }}"
+          imagePullPolicy: {{ .Values.gvmrLite.image.pullPolicy }}
+          env:
+            - name: GVMR_PORT
+              value: {{ .Values.gvmrLite.env.GVMR_PORT | quote }}
+            - name: GVMR_REPORT_FORMATS_FEED_DIR
+              value: {{ .Values.gvmrLite.env.GVMR_REPORT_FORMATS_FEED_DIR | quote }}
+            - name: GVMR_WORK_DIR
+              value: {{ .Values.gvmrLite.env.GVMR_WORK_DIR | quote }}
+            - name: GVMR_REBUILD_ON_START
+              value: {{ .Values.gvmrLite.env.GVMR_REBUILD_ON_START | quote }}
+            - name: GVMR_AUTH_MODE
+              value: {{ .Values.gvmrLite.env.GVMR_AUTH_MODE | quote }}
+            - name: GVMR_JWT_AUDIENCE
+              value: {{ .Values.gvmdLite.gvmr.jwt.audience | quote }}
+            - name: GVMR_JWT_ISSUER
+              value: {{ .Values.gvmdLite.gvmr.jwt.issuer | quote }}
+
+            # JWT shared secret from Secret
+            - name: GVMR_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: gvmr-jwt
+                  key: GVMR_JWT_SHARED_SECRET
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.gvmrLite.service.port }}
+
+          resources:
+            {{- toYaml .Values.gvmrLite.resources | nindent 12 }}
+
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.gvmrLite.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.gvmrLite.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.gvmrLite.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.gvmrLite.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.gvmrLite.readiness.failureThreshold }}
+
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.gvmrLite.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.gvmrLite.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.gvmrLite.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.gvmrLite.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.gvmrLite.liveness.failureThreshold }}
+
+          volumeMounts:
+            # report formats from feed PVC (read-only)
+            - name: report-formats
+              mountPath: /var/lib/gvm
+
+            # work dir (RW)
+            - name: work
+              mountPath: /tmp/gvmr-lite/work
+
+
+      volumes:
+        - name: report-formats
+          persistentVolumeClaim:
+            claimName: {{ .Values.feed.pvc.reportFormats.name }}
+
+        - name: work
+          {{- if .Values.gvmrLite.pvc.work.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.gvmrLite.pvc.work.name }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+{{- end }}

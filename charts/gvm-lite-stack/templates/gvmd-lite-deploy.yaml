@@ -68,6 +68,49 @@ spec:
             - name: RUNNING_ENV
               value: "k8s"
 
+            # ---- Exports ----
+            {{- if .Values.gvmrLite.enabled }}
+            - name: EXPORT_DIR
+              value: {{ .Values.gvmdLite.exports.dir | quote }}
+            {{- end }}
+
+            # ---- GVMR integration (only if gvmr chart component enabled) ----
+            {{- if .Values.gvmrLite.enabled }}
+            - name: GVMR_ENABLED
+              value: "1"
+            - name: GVMR_HOST
+              value: {{ printf "%s.%s.svc.%s" .Values.gvmrLite.service.name .Release.Namespace (default "cluster.local" .Values.clusterDomain) | quote }}
+            - name: GVMR_PORT
+              value: {{ .Values.gvmrLite.service.port | quote }}
+            - name: GVMR_AUTH_MODE
+              value: {{ .Values.gvmdLite.gvmr.authMode | quote }}
+            - name: GVMR_API_KEY_HEADER
+              value: {{ .Values.gvmdLite.gvmr.apiKeyHeader | quote }}
+            - name: GVMR_TIMEOUT_SECONDS
+              value: {{ .Values.gvmdLite.gvmr.timeoutSeconds | quote }}
+
+            {{- if eq .Values.gvmdLite.gvmr.authMode "api_key" }}
+            - name: GVMR_API_KEY
+              value: {{ .Values.gvmdLite.gvmr.apiKey | quote }}
+            {{- end }}
+
+            {{- if eq .Values.gvmdLite.gvmr.authMode "jwt" }}
+            - name: GVMR_JWT_ISSUER
+              value: {{ .Values.gvmdLite.gvmr.jwt.issuer | quote }}
+            - name: GVMR_JWT_AUDIENCE
+              value: {{ .Values.gvmdLite.gvmr.jwt.audience | quote }}
+            - name: GVMR_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: gvmr-jwt
+                  key: GVMR_JWT_SHARED_SECRET
+            {{- end }}
+
+            {{- else }}
+            - name: GVMR_ENABLED
+              value: "0"
+            {{- end }}
+
             # ---- Notifications: SMTP (non-secrets) ----
             - name: SMTP_ENABLED
               value: {{ .Values.gvmdLite.env.SMTP_ENABLED | quote }}
@@ -153,8 +196,23 @@ spec:
           volumeMounts:
             - name: plugins
               mountPath: /var/lib/openvas/plugins
+            # exports dir
+            {{- if .Values.gvmrLite.enabled }}
+            - name: exports
+              mountPath: {{ .Values.gvmdLite.exports.dir }}
+            {{- end }}
 
       volumes:
         - name: plugins
           persistentVolumeClaim:
             claimName: {{ default .Values.feed.pvc.plugins.name .Values.gvmdLite.pvcPluginsName }}
+
+        {{- if .Values.gvmrLite.enabled }}
+        - name: exports
+          {{- if .Values.gvmdLite.exports.pvc.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.gvmdLite.exports.pvc.name }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}

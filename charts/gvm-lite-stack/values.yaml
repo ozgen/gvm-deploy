@@ -17,6 +17,7 @@ feed:
     plugins: { name: gvm-plugins-pvc, size: 5Gi }
     notus: { name: gvm-notus-pvc,   size: 2Gi }
     logs: { name: gvm-log-pvc,     size: 1Gi }
+    reportFormats: { name: gvm-report-formats-pvc, size: 1Gi }
   readiness:
     initialDelaySeconds: 10
     periodSeconds: 30
@@ -132,6 +133,25 @@ gvmdLite:
     type: ClusterIP
   pvcPluginsName: gvm-plugins-pvc
 
+  # Export directory (defaults to tmp; can be made persistent via PVC in templates)
+  exports:
+    dir: "/tmp/gvmd-lite/exports"
+    pvc:
+      enabled: false
+      name: gvmd-exports-pvc
+      size: 2Gi
+
+  # GVMR integration config (gvmd-lite will use these when .Values.gvmr.enabled=true)
+  gvmr:
+    authMode: "jwt"            # none | api_key | jwt
+    apiKey: ""
+    apiKeyHeader: "X-API-Key"
+    jwt:
+      issuer: "gvmd-lite"
+      audience: "gvmr-lite"
+      # secret comes from Secret "gvmr-jwt" key "GVMR_JWT_SHARED_SECRET"
+    timeoutSeconds: "300"
+
   # Use **external** DB instead of the Bitnami subchart when enabled:
   externalDb:
     enabled: false
@@ -223,3 +243,55 @@ gsaLite:
     supportedLanguages: ["en","de"]
     tokenKey: "gsa-lite-access-token"
     refreshTokenKey: "gsa-lite-refresh-token"
+
+gvmrLite:
+  enabled: true
+
+  image:
+    repository: ozgenm/gvmr-lite
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "500Mi"
+    limits:
+      cpu: "400m"
+      memory: "2Gi"
+
+  readiness:
+    path: /health/ready
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+  liveness:
+    path: /health/live
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+  service:
+    name: gvmr-lite
+    port: 8084
+    type: ClusterIP
+
+  env:
+    GVMR_PORT: "8084"
+    GVMR_REPORT_FORMATS_FEED_DIR: "/var/lib/gvm/data-objects/gvmd/report-formats"
+    GVMR_WORK_DIR: "/tmp/gvmr-lite/work"
+    GVMR_REBUILD_ON_START: "true"
+    GVMR_AUTH_MODE: "jwt"
+
+  jwt:
+    sharedSecret: "supersecret_shared_between_services"
+
+  pvc:
+    work:
+      enabled: true
+      name: gvmr-work-pvc
+      size: 1Gi
+

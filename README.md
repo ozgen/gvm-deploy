@@ -3,16 +3,21 @@
 Helm chart that deploys a lightweight Greenbone stack on Kubernetes:
 
 * **gvmd-lite** (API)
+* **gvmr-lite** (report formats & rendering service)
 * **openvas-service** (scanner)
-* **feed-service** (feeds/NVT sync)
+* **feed-service** (feeds / NVT sync)
 * **gsa-lite** (frontend)
 * **Bitnami PostgreSQL** subchart (enabled by default)
 
-## Prereqs
+---
+
+## Prerequisites
 
 * Helm ≥ 3.10
-* `kubectl` pointing at your cluster (e.g., Minikube)
-* Docker (only if you build local images)
+* `kubectl` pointing at your cluster (e.g. Minikube)
+* Docker (only required for building local images)
+
+---
 
 ## Chart tree
 
@@ -21,10 +26,12 @@ charts/
   gvm-lite-stack/
     Chart.yaml
     Chart.lock
-    values.yaml          
+    values.yaml
     templates/
-    charts/             
+    charts/
 ```
+
+---
 
 ## Pull chart dependencies
 
@@ -33,11 +40,13 @@ cd charts/gvm-lite-stack
 helm dependency build
 ```
 
+---
+
 ## Render manifests (no deploy)
 
 ```bash
 helm template gvm ../gvm-lite-stack -n gvm > gvm-lite-stack.yaml
-# (or from repo root)
+# or from repo root
 helm template gvm charts/gvm-lite-stack -n gvm > gvm-lite-stack.yaml
 ```
 
@@ -45,6 +54,8 @@ helm template gvm charts/gvm-lite-stack -n gvm > gvm-lite-stack.yaml
 helm template gvm charts/gvm-lite-stack -n gvm \
   -f charts/gvm-lite-stack/values.yaml > gvm-lite-stack.yaml
 ```
+
+---
 
 ## Deploy (default values.yaml)
 
@@ -66,6 +77,8 @@ helm upgrade gvm charts/gvm-lite-stack -n gvm \
 helm uninstall gvm -n gvm
 ```
 
+---
+
 ## Quick checks
 
 ```bash
@@ -73,28 +86,39 @@ kubectl get pods -n gvm
 kubectl get svc -n gvm
 ```
 
-* Frontend (NodePort): `gsa-lite` on **node port 30080**
+Service endpoints inside the cluster:
+
+* Frontend (NodePort): **gsa-lite** → node port **30080**
 * API service: `gvmd-lite.gvm.svc.cluster.local:8082`
+* Report-render service: `gvmr-lite.gvm.svc.cluster.local:8084`
 * Scanner service: `openvas-service.gvm.svc.cluster.local:3001`
 
-## Dev loop with local images (Minikube)
+---
 
-Build **into** Minikube and point the chart at those tags:
+## Development loop with local images (Minikube)
+
+Build images **inside** Minikube and point the chart at those tags:
 
 ```bash
 eval "$(minikube docker-env)"
 
-# build images with your preferred tags
 docker build -t ozgenm/gvmd-lite:dev path/to/gvmd-lite
-docker build -t ozgenm/scanner:dev     path/to/scanner
-docker build -t ozgenm/feed-img:dev    path/to/feed
-docker build -t gsa-lite:prod          path/to/gsa   # you already use this tag
+docker build -t ozgenm/gvmr-lite:dev path/to/gvmr-lite
+docker build -t ozgenm/scanner:dev   path/to/scanner
+docker build -t ozgenm/feed-img:dev  path/to/feed
+docker build -t gsa-lite:prod        path/to/gsa
+```
 
-# deploy using those tags (override only the image bits)
+Deploy using local images:
+
+```bash
 helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
   --set gvmdLite.image.repository=ozgenm/gvmd-lite \
   --set gvmdLite.image.tag=dev \
   --set gvmdLite.image.pullPolicy=Always \
+  --set gvmrLite.image.repository=ozgenm/gvmr-lite \
+  --set gvmrLite.image.tag=dev \
+  --set gvmrLite.image.pullPolicy=Always \
   --set scanner.image.repository=ozgenm/scanner \
   --set scanner.image.tag=dev \
   --set scanner.image.pullPolicy=Always \
@@ -105,9 +129,9 @@ helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
 
 ---
 
-## PostgreSQL Dependency
+## PostgreSQL dependency
 
-This chart includes the **Bitnami PostgreSQL** Helm chart as a dependency (see `Chart.yaml`):
+This chart includes the **Bitnami PostgreSQL** Helm chart as a dependency:
 
 ```yaml
 dependencies:
@@ -119,32 +143,34 @@ dependencies:
 
 ### Default (enabled)
 
-By default, the Bitnami subchart is installed and a `gvmd` database is created:
-
 ```yaml
 postgresql:
   enabled: true
   architecture: standalone
   auth:
-    username: "gvmd"
-    password: "gvmdpw"            # change or override in production
-    database: "gvmd-lite-service"
+    username: gvmd
+    password: gvmdpw   # override in production
+    database: gvmd-lite-service
   primary:
     persistence:
       enabled: true
       size: 8Gi
 ```
 
-This creates a StatefulSet (`gvm-postgresql-0`), a Service (`gvm-postgresql`), and a Secret (`gvm-postgresql` with the password).
-`gvmd-lite` automatically uses this internal Postgres if `postgresql.enabled=true`.
+This creates:
 
-## External Postgres (optional)
+* a StatefulSet (`gvm-postgresql-0`)
+* a Service (`gvm-postgresql`)
+* a Secret containing DB credentials
 
-The values enable Bitnami Postgres by default. To use an **external** DB:
+`gvmd-lite` automatically connects to this DB when enabled.
+
+---
+
+## External PostgreSQL (optional)
 
 ```bash
 helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
-  -f charts/gvm-lite-stack/values.yaml \
   --set postgresql.enabled=false \
   --set gvmdLite.externalDb.enabled=true \
   --set gvmdLite.externalDb.host="postgres.external.svc" \
@@ -157,25 +183,23 @@ helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
 
 ---
 
-## Notification Integrations (optional)
+## Notification integrations (optional)
 
-`gvmd-lite` supports optional outbound notifications via **SMTP**, **Slack**, and **Azure Blob Storage**.
-All integrations are **disabled by default** (`*_ENABLED=0`).
+`gvmd-lite` supports outbound notifications via **SMTP**, **Slack**, and **Azure Blob Storage**.
+All integrations are **disabled by default**.
 
-To enable one or more integrations, set the following in `values.yaml` or via `--set-string` flags.
-
-### SMTP (Email)
+### SMTP
 
 ```yaml
 gvmdLite:
   env:
     SMTP_ENABLED: "1"
-    SMTP_HOST: "smtp.example.com"
+    SMTP_HOST: smtp.example.com
     SMTP_PORT: "587"
-    SMTP_FROM: "noreply@example.com"
+    SMTP_FROM: noreply@example.com
   secrets:
-    SMTP_USERNAME: "myuser"
-    SMTP_PASSWORD: "mypassword"
+    SMTP_USERNAME: myuser
+    SMTP_PASSWORD: mypassword
 ```
 
 ### Slack
@@ -185,7 +209,7 @@ gvmdLite:
   env:
     SLACK_ENABLED: "1"
   secrets:
-    SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/xxx/yyy/zzz"
+    SLACK_WEBHOOK_URL: https://hooks.slack.com/services/xxx/yyy/zzz
 ```
 
 ### Azure Blob
@@ -194,51 +218,46 @@ gvmdLite:
 gvmdLite:
   env:
     AZURE_CONTAINER_ENABLED: "1"
-    AZURE_STORAGE_ACCOUNT_NAME: "myaccount"
-    AZURE_CONTAINER_NAME: "mycontainer"
+    AZURE_STORAGE_ACCOUNT_NAME: myaccount
+    AZURE_CONTAINER_NAME: mycontainer
   secrets:
-    AZURE_CONTAINER_ACCESS_KEY: "myaccesskey"
-```
-
-### Default (disabled)
-
-By default, all integrations are set to `"0"` (disabled) in `values.yaml`:
-
-```yaml
-SMTP_ENABLED: "0"
-SLACK_ENABLED: "0"
-AZURE_CONTAINER_ENABLED: "0"
-```
-
-### Example: enable SMTP during install
-
-```bash
-helm upgrade --install gvm charts/gvm-lite-stack -n gvm \
-  --set-string gvmdLite.env.SMTP_ENABLED=1 \
-  --set-string gvmdLite.env.SMTP_HOST="smtp.example.com" \
-  --set-string gvmdLite.env.SMTP_FROM="noreply@example.com" \
-  --set-string gvmdLite.secrets.SMTP_USERNAME="$SMTP_USERNAME" \
-  --set-string gvmdLite.secrets.SMTP_PASSWORD="$SMTP_PASSWORD"
+    AZURE_CONTAINER_ACCESS_KEY: myaccesskey
 ```
 
 ---
 
-## Troubleshooting quickies
+## Troubleshooting quick commands
 
 * Render with debug:
-  `helm template gvm charts/gvm-lite-stack -n gvm --debug`
+
+  ```bash
+  helm template gvm charts/gvm-lite-stack -n gvm --debug
+  ```
 * Watch rollout:
-  `kubectl -n gvm rollout status deploy/gvmd-lite`
-* Describe events/errors:
-  `kubectl -n gvm describe pod -l app=gvmd-lite`
-* Check env seen by the process (PID 1):
-  `kubectl exec -n gvm deploy/gvmd-lite -- sh -c "tr '\0' '\n' </proc/1/environ | egrep 'SCANNER_HOST|DB_HOST'"`
 
-## Notes on your current `values.yaml`
+  ```bash
+  kubectl -n gvm rollout status deploy/gvmd-lite
+  ```
+* Describe pod issues:
 
-* **Scanner uses hostNetwork: true**. That’s good for raw socket scans; if you hit permission issues with `nmap` inside
-  VTs, ensure the scanner container has the right Linux capabilities or setcaps in the image.
-* **GSA NodePort** is **30080** (already set). `minikube service gsa-lite -n gvm --url` prints the URL.
-* **Feed PVC sizes** match your earlier setup: plugins 5Gi, notus 2Gi, logs 1Gi.
+  ```bash
+  kubectl -n gvm describe pod -l app=gvmd-lite
+  ```
+
+---
+
+## Persistent Volume Claims (PVCs)
+
+The chart creates the following PVCs by default:
+
+| Component        | Purpose                   | Size |
+| ---------------- | ------------------------- | ---- |
+| PostgreSQL       | Database storage          | 8Gi  |
+| Feed – plugins   | NVT feed data             | 5Gi  |
+| Feed – notus     | Notus feed data           | 2Gi  |
+| Feed – logs      | Feed sync logs            | 1Gi  |
+| gvmr-lite – work | Report rendering work dir | 1Gi  |
+
+PVC sizes can be adjusted in `values.yaml` as needed.
 
 ---

@@ -291,7 +291,7 @@ gvmrLite:
 
   pvc:
     work:
-      enabled: true
+      enabled: false
       name: gvmr-work-pvc
       size: 1Gi
 

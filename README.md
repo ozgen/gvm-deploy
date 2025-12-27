@@ -250,13 +250,14 @@ gvmdLite:
 
 The chart creates the following PVCs by default:
 
-| Component        | Purpose                   | Size |
-| ---------------- | ------------------------- | ---- |
-| PostgreSQL       | Database storage          | 8Gi  |
-| Feed – plugins   | NVT feed data             | 5Gi  |
-| Feed – notus     | Notus feed data           | 2Gi  |
-| Feed – logs      | Feed sync logs            | 1Gi  |
-| gvmr-lite – work | Report rendering work dir | 1Gi  |
+| Component             | Purpose                   | Size |
+|-----------------------|---------------------------| ---- |
+| PostgreSQL            | Database storage          | 8Gi  |
+| Feed – plugins        | NVT feed data             | 5Gi  |
+| Feed – notus          | Notus feed data           | 2Gi  |
+| Feed – report-formats | Report format feed data   | 1Gi  |
+| Feed – logs           | Feed sync logs            | 1Gi  |
+| gvmr-lite – work      | Report rendering work dir | 1Gi  |
 
 PVC sizes can be adjusted in `values.yaml` as needed.
 

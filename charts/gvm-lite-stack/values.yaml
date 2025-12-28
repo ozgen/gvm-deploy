@@ -36,7 +36,6 @@ scanner:
     name: openvas-service
     port: 3001
     type: ClusterIP
-  hostNetwork: true
   saName: openvas
 
 # Optional if you pull from a private registry

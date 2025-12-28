@@ -12,10 +12,8 @@ spec:
       labels: { app: openvas-service }
     spec:
       serviceAccountName: {{ .Values.scanner.saName }}
-      {{- if .Values.scanner.hostNetwork }}
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
-      {{- end }}
+      hostNetwork: false
+      dnsPolicy: ClusterFirst
 
       initContainers:
         - name: stage-tools-if-needed

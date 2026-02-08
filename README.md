@@ -23,7 +23,7 @@ Helm chart that deploys a lightweight Greenbone stack on Kubernetes:
 ### Recommended
 - **kubeconform** (validates rendered manifests against Kubernetes schemas)
   - macOS (Homebrew): `brew install kubeconform`
-  - Linux: install from GitHub releases (see CI workflow or project docs)
+  - Linux: install from GitHub releases (see CI workflow)
   - Verify: `kubeconform -v`
 - **yamlfmt** (formats / checks YAML style)
   - Install (Go): `go install github.com/google/yamlfmt/cmd/yamlfmt@latest`
@@ -142,7 +142,7 @@ kubectl get svc -n gvm
 
 Service endpoints inside the cluster:
 
-* Frontend (NodePort): **gsa-lite** → node port **30080**
+* Frontend (NodePort): **gsa-lite** to node port **30080**
 * API service: `gvmd-lite.gvm.svc.cluster.local:8082`
 * Report-render service: `gvmr-lite.gvm.svc.cluster.local:8084`
 * Scanner service: `openvas-service.gvm.svc.cluster.local:3001`

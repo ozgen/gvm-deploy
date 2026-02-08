@@ -1,0 +1,48 @@
+suite: gvmd-lite service
+templates:
+  - templates/gvmd-lite-svc.yaml
+tests:
+  - it: renders a Service and selects app=gvmd-lite
+    set:
+      gvmdLite:
+        service:
+          name: gvmd-lite-service
+          port: 8082
+          type: ClusterIP
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: gvmd-lite-service
+      - equal:
+          path: spec.selector.app
+          value: gvmd-lite
+  - it: exposes http port and targets named port http
+    set:
+      gvmdLite:
+        service:
+          name: gvmd-lite-service
+          port: 8082
+          type: ClusterIP
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: http
+      - equal:
+          path: spec.ports[0].port
+          value: 8082
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+  - it: uses service type from values
+    set:
+      gvmdLite:
+        service:
+          name: gvmd-lite-service
+          port: 8082
+          type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer

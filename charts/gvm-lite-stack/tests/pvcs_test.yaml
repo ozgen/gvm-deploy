@@ -1,0 +1,168 @@
+suite: pvcs
+templates:
+  - templates/pvcs.yaml
+tests:
+  - it: renders exactly 4 feed PVCs when work/exports are disabled
+    set:
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc, size: 10Gi}
+          notus: {name: gvm-notus-pvc, size: 5Gi}
+          logs: {name: gvm-log-pvc, size: 1Gi}
+          reportFormats: {name: gvm-report-formats-pvc, size: 2Gi}
+      gvmrLite:
+        enabled: false
+        pvc:
+          work:
+            enabled: false
+      gvmdLite:
+        exports:
+          pvc:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 4
+      - isKind:
+          of: PersistentVolumeClaim
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: gvm-plugins-pvc
+        documentIndex: 0
+      - equal:
+          path: spec.resources.requests.storage
+          value: 10Gi
+        documentIndex: 0
+      - isKind:
+          of: PersistentVolumeClaim
+        documentIndex: 1
+      - equal:
+          path: metadata.name
+          value: gvm-notus-pvc
+        documentIndex: 1
+      - equal:
+          path: spec.resources.requests.storage
+          value: 5Gi
+        documentIndex: 1
+      - isKind:
+          of: PersistentVolumeClaim
+        documentIndex: 2
+      - equal:
+          path: metadata.name
+          value: gvm-log-pvc
+        documentIndex: 2
+      - equal:
+          path: spec.resources.requests.storage
+          value: 1Gi
+        documentIndex: 2
+      - isKind:
+          of: PersistentVolumeClaim
+        documentIndex: 3
+      - equal:
+          path: metadata.name
+          value: gvm-report-formats-pvc
+        documentIndex: 3
+      - equal:
+          path: spec.resources.requests.storage
+          value: 2Gi
+        documentIndex: 3
+  - it: adds work PVC as 5th document only when enabled
+    set:
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc, size: 10Gi}
+          notus: {name: gvm-notus-pvc, size: 5Gi}
+          logs: {name: gvm-log-pvc, size: 1Gi}
+          reportFormats: {name: gvm-report-formats-pvc, size: 2Gi}
+      gvmrLite:
+        enabled: true
+        pvc:
+          work:
+            enabled: true
+            name: gvmr-work-pvc
+            size: 1Gi
+      gvmdLite:
+        exports:
+          pvc:
+            enabled: false
+    asserts:
+      - hasDocuments:
+          count: 5
+      - equal:
+          path: metadata.name
+          value: gvmr-work-pvc
+        documentIndex: 4
+      - equal:
+          path: spec.resources.requests.storage
+          value: 1Gi
+        documentIndex: 4
+  - it: adds exports PVC as 5th document only when enabled (and work disabled)
+    set:
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc, size: 10Gi}
+          notus: {name: gvm-notus-pvc, size: 5Gi}
+          logs: {name: gvm-log-pvc, size: 1Gi}
+          reportFormats: {name: gvm-report-formats-pvc, size: 2Gi}
+      gvmrLite:
+        enabled: true
+        pvc:
+          work:
+            enabled: false
+      gvmdLite:
+        exports:
+          pvc:
+            enabled: true
+            name: gvmd-exports-pvc
+            size: 3Gi
+    asserts:
+      - hasDocuments:
+          count: 5
+      - equal:
+          path: metadata.name
+          value: gvmd-exports-pvc
+        documentIndex: 4
+      - equal:
+          path: spec.resources.requests.storage
+          value: 3Gi
+        documentIndex: 4
+  - it: adds both work and exports PVCs as documents 5 and 6 when both enabled
+    set:
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc, size: 10Gi}
+          notus: {name: gvm-notus-pvc, size: 5Gi}
+          logs: {name: gvm-log-pvc, size: 1Gi}
+          reportFormats: {name: gvm-report-formats-pvc, size: 2Gi}
+      gvmrLite:
+        enabled: true
+        pvc:
+          work:
+            enabled: true
+            name: gvmr-work-pvc
+            size: 1Gi
+      gvmdLite:
+        exports:
+          pvc:
+            enabled: true
+            name: gvmd-exports-pvc
+            size: 3Gi
+    asserts:
+      - hasDocuments:
+          count: 6
+      - equal:
+          path: metadata.name
+          value: gvmr-work-pvc
+        documentIndex: 4
+      - equal:
+          path: spec.resources.requests.storage
+          value: 1Gi
+        documentIndex: 4
+      - equal:
+          path: metadata.name
+          value: gvmd-exports-pvc
+        documentIndex: 5
+      - equal:
+          path: spec.resources.requests.storage
+          value: 3Gi
+        documentIndex: 5

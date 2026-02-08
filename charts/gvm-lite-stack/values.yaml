@@ -1,7 +1,5 @@
 namespace: gvm
-
 clusterDomain: cluster.local
-
 feed:
   fsGroup: 1000
   fsGroupChangePolicy: OnRootMismatch
@@ -14,10 +12,10 @@ feed:
     pullPolicy: IfNotPresent
   tz: "Europe/Berlin"
   pvc:
-    plugins: { name: gvm-plugins-pvc, size: 5Gi }
-    notus: { name: gvm-notus-pvc,   size: 2Gi }
-    logs: { name: gvm-log-pvc,     size: 1Gi }
-    reportFormats: { name: gvm-report-formats-pvc, size: 1Gi }
+    plugins: {name: gvm-plugins-pvc, size: 5Gi}
+    notus: {name: gvm-notus-pvc, size: 2Gi}
+    logs: {name: gvm-log-pvc, size: 1Gi}
+    reportFormats: {name: gvm-report-formats-pvc, size: 1Gi}
   readiness:
     initialDelaySeconds: 10
     periodSeconds: 30
@@ -26,7 +24,6 @@ feed:
   liveness:
     initialDelaySeconds: 60
     periodSeconds: 60
-
 scanner:
   image:
     repository: ozgenm/scanner
@@ -37,10 +34,8 @@ scanner:
     port: 3001
     type: ClusterIP
   saName: openvas
-
 # Optional if you pull from a private registry
-imagePullSecrets: [ ]
-
+imagePullSecrets: []
 redis:
   config: |-
     bind 127.0.0.1
@@ -78,11 +73,11 @@ redis:
     auto-aof-rewrite-min-size 64mb
     aof-load-truncated yes
     lua-time-limit 5000
-    
+
     slowlog-log-slower-than 10000
-    
+
     slowlog-max-len 128
-    
+
     latency-monitor-threshold 0
     notify-keyspace-events ""
     hash-max-ziplist-entries 512
@@ -90,7 +85,7 @@ redis:
     list-max-ziplist-size -2
     list-compress-depth 0
     set-max-intset-entries 512
-    
+
     zset-max-ziplist-entries 128
     zset-max-ziplist-value 64
     hll-sparse-max-bytes 3000
@@ -100,20 +95,18 @@ redis:
     client-output-buffer-limit pubsub 32mb 8mb 60
     hz 10
     aof-rewrite-incremental-fsync yes
-
 # --- Postgres subchart (optional) ---
 postgresql:
   enabled: true
   architecture: standalone
   auth:
-    username: "gvmd"         # app user
-    password: "gvmdpw"       # or leave empty to auto-generate
+    username: "gvmd" # app user
+    password: "gvmdpw" # or leave empty to auto-generate
     database: "gvmd-lite-service"
   primary:
     persistence:
       enabled: true
       size: 8Gi
-
 gvmdLite:
   image:
     repository: ozgenm/gvmd-lite
@@ -131,7 +124,6 @@ gvmdLite:
     port: 8082
     type: ClusterIP
   pvcPluginsName: gvm-plugins-pvc
-
   # Export directory (defaults to tmp; can be made persistent via PVC in templates)
   exports:
     dir: "/tmp/gvmd-lite/exports"
@@ -139,10 +131,9 @@ gvmdLite:
       enabled: false
       name: gvmd-exports-pvc
       size: 2Gi
-
   # GVMR integration config (gvmd-lite will use these when .Values.gvmr.enabled=true)
   gvmr:
-    authMode: "jwt"            # none | api_key | jwt
+    authMode: "jwt" # none | api_key | jwt
     apiKey: ""
     apiKeyHeader: "X-API-Key"
     jwt:
@@ -150,7 +141,6 @@ gvmdLite:
       audience: "gvmr-lite"
       # secret comes from Secret "gvmr-jwt" key "GVMR_JWT_SHARED_SECRET"
     timeoutSeconds: "300"
-
   # Use **external** DB instead of the Bitnami subchart when enabled:
   externalDb:
     enabled: false
@@ -158,24 +148,21 @@ gvmdLite:
     port: 5432
     user: "user"
     name: "gvmd-lite-service"
-    passwordSecretName: ""      # e.g., my-external-pg
+    passwordSecretName: "" # e.g., my-external-pg
     passwordSecretKey: "DB_PASSWORD"
-
   # App-only secrets (not DB):
   secrets:
     ADMIN_PASSWORD: "admin"
     JWT_SECRET: "your-super-secret-key"
     CREDENTIAL_ENCRYPTION_KEY: "V1cyVHd3M2FpVmZXWjBFUWdnRmU2OU4wQzBxUFR4VEc="
-
     SMTP_USERNAME: ""
     SMTP_PASSWORD: ""
     SLACK_WEBHOOK_URL: ""
     AZURE_CONTAINER_ACCESS_KEY: ""
-
     # Application env configuration
   env:
-    JWT_TOKEN_TIME: "2"            # hours
-    REFRESH_TOKEN_TIME: "1"        # days
+    JWT_TOKEN_TIME: "2" # hours
+    REFRESH_TOKEN_TIME: "1" # days
     ENABLE_CVSS3_1: "1"
     FEED_VT_METADATA_PATH: "/var/lib/openvas/plugins/vt-metadata.json"
     FEED_SCAN_CONFIG_DIR: ""
@@ -185,25 +172,19 @@ gvmdLite:
     SMTP_HOST: ""
     SMTP_PORT: "587"
     SMTP_FROM: ""
-
     # Slack - default disabled
     SLACK_ENABLED: "0"
-
     # Azure - default disabled
     AZURE_STORAGE_ACCOUNT_NAME: ""
     AZURE_CONTAINER_NAME: ""
     AZURE_CONTAINER_ENABLED: "0"
-
 gsaLite:
   replicas: 1
-
   image:
     repository: ozgenm/gsa-lite
     tag: latest
     pullPolicy: IfNotPresent
-
   containerPort: 80
-
   resources:
     requests:
       cpu: "100m"
@@ -211,46 +192,38 @@ gsaLite:
     limits:
       cpu: "200m"
       memory: "256Mi"
-
   readiness:
     path: /healthz
     initialDelaySeconds: 5
     periodSeconds: 10
-
   service:
     type: NodePort
     port: 80
     nodePort: 30080
-
   podSecurityContext:
     runAsNonRoot: true
     fsGroup: 101
     fsGroupChangePolicy: OnRootMismatch
-
   containerSecurityContext:
     runAsUser: 101
     runAsGroup: 101
     allowPrivilegeEscalation: false
-
   # runtime config written into ConfigMap
   config:
-    backendOrigin: "http://gvmd-lite.gvm.svc.cluster.local:8082"  # nginx proxy target
+    backendOrigin: "http://gvmd-lite.gvm.svc.cluster.local:8082" # nginx proxy target
     backendHost: ""
     authBasePath: "/auth"
     apiBasePath: "/api/v1"
     defaultLanguage: "en"
-    supportedLanguages: ["en","de"]
+    supportedLanguages: ["en", "de"]
     tokenKey: "gsa-lite-access-token"
     refreshTokenKey: "gsa-lite-refresh-token"
-
 gvmrLite:
   enabled: true
-
   image:
     repository: ozgenm/gvmr-lite
     tag: latest
     pullPolicy: IfNotPresent
-
   resources:
     requests:
       cpu: "200m"
@@ -258,39 +231,32 @@ gvmrLite:
     limits:
       cpu: "400m"
       memory: "2Gi"
-
   readiness:
     path: /health/ready
     initialDelaySeconds: 5
     periodSeconds: 10
     timeoutSeconds: 2
     failureThreshold: 3
-
   liveness:
     path: /health/live
     initialDelaySeconds: 20
     periodSeconds: 10
     timeoutSeconds: 2
     failureThreshold: 3
-
   service:
     name: gvmr-lite
     port: 8084
     type: ClusterIP
-
   env:
     GVMR_PORT: "8084"
     GVMR_REPORT_FORMATS_FEED_DIR: "/var/lib/gvm/data-objects/gvmd/report-formats"
     GVMR_WORK_DIR: "/tmp/gvmr-lite/work"
     GVMR_REBUILD_ON_START: "true"
     GVMR_AUTH_MODE: "jwt"
-
   jwt:
     sharedSecret: "supersecret_shared_between_services"
-
   pvc:
     work:
       enabled: false
       name: gvmr-work-pvc
       size: 1Gi
-

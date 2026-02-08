@@ -1,0 +1,14 @@
+suite: core manifests render
+templates:
+  - templates/gvmd-lite-deploy.yaml
+  - templates/gvmd-lite-svc.yaml
+  - templates/gsa-lite-deploy.yaml
+  - templates/gsa-lite-svc.yaml
+  - templates/scanner-deploy.yaml
+  - templates/scanner-svc.yaml
+tests:
+  - it: should render Services and Deployments with correct kinds
+    asserts:
+      - matchRegex:
+          path: kind
+          pattern: "^(Deployment|Service)$"

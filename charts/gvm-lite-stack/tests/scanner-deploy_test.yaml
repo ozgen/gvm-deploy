@@ -1,0 +1,204 @@
+suite: openvas-service deployment
+templates:
+  - templates/scanner-deploy.yaml
+tests:
+  - it: renders Deployment openvas-service with correct labels/selector
+    set:
+      scanner:
+        saName: openvas-sa
+        image:
+          repository: "ghcr.io/acme/openvas"
+          tag: "1.0.0"
+        service:
+          port: 3001
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: openvas-service
+      - equal:
+          path: spec.selector.matchLabels.app
+          value: openvas-service
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: openvas-service
+  - it: sets serviceAccountName and networking defaults
+    set:
+      scanner:
+        saName: openvas-sa
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: openvas-sa
+      - equal:
+          path: spec.template.spec.hostNetwork
+          value: false
+      - equal:
+          path: spec.template.spec.dnsPolicy
+          value: ClusterFirst
+  - it: has initContainer stage-tools-if-needed with expected volume mounts
+    set:
+      scanner:
+        saName: openvas-sa
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: stage-tools-if-needed
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "ghcr.io/acme/openvas:1.0.0"
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: tools
+            mountPath: /tools
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: usr-local-sbin-vol
+            mountPath: /work-usr-local-sbin
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: nmap-file
+            mountPath: /nmap-vol
+  - it: has main container openvas with NET_RAW/NET_ADMIN and PATH env
+    set:
+      scanner:
+        saName: openvas-sa
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: openvas
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/acme/openvas:1.0.0"
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: scanner
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 3001
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 0
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsGroup
+          value: 0
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: true
+      - contains:
+          path: spec.template.spec.containers[0].securityContext.capabilities.add
+          content: NET_RAW
+      - contains:
+          path: spec.template.spec.containers[0].securityContext.capabilities.add
+          content: NET_ADMIN
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PATH
+            value: "/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  - it: mounts redis.conf from configmap via subPath and marks it readOnly
+    set:
+      scanner:
+        saName: openvas-sa
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: redis-conf
+            mountPath: /etc/redis/redis.conf
+            subPath: redis.conf
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: redis-conf
+            configMap:
+              name: openvas-redis-config
+              items:
+                - key: redis.conf
+                  path: redis.conf
+  - it: uses PVCs for plugins/notus and emptyDir for runtime dirs
+    set:
+      scanner:
+        saName: openvas-sa
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
+      feed:
+        pvc:
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: plugins
+            persistentVolumeClaim:
+              claimName: gvm-plugins-pvc
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: notus
+            persistentVolumeClaim:
+              claimName: gvm-notus-pvc
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: varlog
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: run-redis
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: run-ospd
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tools
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: usr-local-sbin-vol
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nmap-file
+            emptyDir: {}

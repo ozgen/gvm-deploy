@@ -13,9 +13,63 @@ Helm chart that deploys a lightweight Greenbone stack on Kubernetes:
 
 ## Prerequisites
 
-* Helm ≥ 3.10
-* `kubectl` pointing at your cluster (e.g. Minikube)
-* Docker (only required for building local images)
+### Required
+- **Helm** (v3.x)
+  - Verify: `helm version`
+- **helm-unittest** plugin (for unit tests)
+  - Install: `helm plugin install https://github.com/helm-unittest/helm-unittest`
+  - Verify: `helm plugin list | grep unittest`
+
+### Recommended
+- **kubeconform** (validates rendered manifests against Kubernetes schemas)
+  - macOS (Homebrew): `brew install kubeconform`
+  - Linux: install from GitHub releases (see CI workflow or project docs)
+  - Verify: `kubeconform -v`
+- **yamlfmt** (formats / checks YAML style)
+  - Install (Go): `go install github.com/google/yamlfmt/cmd/yamlfmt@latest`
+  - Ensure it’s on PATH: `export PATH="$PATH:$HOME/go/bin"`
+  - Verify: `yamlfmt -version` (or `yamlfmt --version`)
+
+> Note: Helm templates under `charts/**/templates/` are **not valid YAML** until rendered, so formatting is applied only to `Chart.yaml`, `values*.yaml`, and `tests/**/*.yaml`.
+
+---
+
+## Development Commands (Makefile)
+
+This repository uses a Makefile to keep common actions consistent locally and in CI.
+
+> Chart location: `charts/gvm-lite-stack`
+
+### Format (non-template YAML only)
+- Format files in-place:
+  - `make fmt`
+- Check formatting (CI-style; fails if formatting would change):
+  - `make fmt-check`
+
+### Lint
+- Run Helm lint:
+  - `make lint`
+
+### Unit tests
+- Run Helm unit tests:
+  - `make test`
+
+### Render manifests
+- Render the chart to a local file:
+  - `make render`
+  - Output: `/tmp/gvm-lite-stack.rendered.yaml`
+
+### Schema validation (rendered output)
+- Validate rendered manifests with kubeconform:
+  - `make validate`
+
+### Coverage gate (Helm template coverage)
+- Ensure every template has at least one unit test referencing it:
+  - `make coverage`
+
+### Full local check (recommended before pushing)
+- Run everything CI expects:
+  - `make check`
 
 ---
 

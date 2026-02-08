@@ -1,0 +1,102 @@
+suite: feed-service deployment
+templates:
+  - templates/feed-deploy.yaml
+
+tests:
+  - it: renders a Deployment named feed-service
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: feed-service
+
+  - it: uses app=feed-service for selector and pod labels
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels.app
+          value: feed-service
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: feed-service
+
+  - it: sets securityContext defaults (fsGroup and fsGroupChangePolicy)
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.fsGroupChangePolicy
+          value: OnRootMismatch
+
+  - it: includes initContainer prep-volumes with default image and root user
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: prep-volumes
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.runAsUser
+          value: 0
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "busybox:1.36"
+
+  - it: includes main container feed with readiness and liveness probes
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: feed
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe.exec.command
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe.exec.command
+
+  - it: mounts expected volumes in the main container
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: plugins
+            mountPath: /var/lib/openvas/plugins
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: notus
+            mountPath: /var/lib/notus
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: logs
+            mountPath: /var/log/feedsync
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: report-formats
+            mountPath: /var/lib/gvm
+
+  - it: defines PVC-backed volumes with claimNames
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: plugins
+            persistentVolumeClaim:
+              claimName: gvm-plugins-pvc
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: notus
+            persistentVolumeClaim:
+              claimName: gvm-notus-pvc
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: logs
+            persistentVolumeClaim:
+              claimName: gvm-log-pvc
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: report-formats
+            persistentVolumeClaim:
+              claimName: gvm-report-formats-pvc

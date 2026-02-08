@@ -1,0 +1,27 @@
+suite: redis configmap
+templates:
+  - templates/redis-configmap.yaml
+
+tests:
+  - it: renders ConfigMap openvas-redis-config
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: openvas-redis-config
+
+  - it: renders redis.conf from values
+    set:
+      redis:
+        config: |
+          bind 0.0.0.0
+          protected-mode no
+          save ""
+    asserts:
+      - equal:
+          path: data["redis.conf"]
+          value: |-
+            bind 0.0.0.0
+            protected-mode no
+            save ""

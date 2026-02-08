@@ -1,0 +1,12 @@
+suite: namespace
+templates:
+  - templates/namespace.yaml
+
+tests:
+  - it: renders a Namespace with release namespace as name
+    asserts:
+      - isKind:
+          of: Namespace
+      - equal:
+          path: metadata.name
+          value: NAMESPACE

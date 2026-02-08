@@ -1,0 +1,50 @@
+suite: gsa-lite configmap
+templates:
+  - templates/gsa-lite-configmap.yaml
+
+tests:
+  - it: renders ConfigMap with the correct name
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: gsa-lite-config
+
+  - it: sets defaults when values are empty
+    set:
+      gsaLite:
+        config:
+          backendOrigin: ""
+          backendHost: ""
+          authBasePath: ""
+          apiBasePath: ""
+          defaultLanguage: ""
+          supportedLanguages: null
+          tokenKey: ""
+          refreshTokenKey: ""
+    asserts:
+      - equal:
+          path: data.BACKEND_ORIGIN
+          value: ""
+      - equal:
+          path: data.BACKEND_HOST
+          value: ""
+      - equal:
+          path: data.AUTH_BASE_PATH
+          value: "/auth"
+      - equal:
+          path: data.API_BASE_PATH
+          value: "/api/v1"
+      - equal:
+          path: data.DEFAULT_LANGUAGE
+          value: "en"
+      - equal:
+          path: data.SUPPORTED_LANGUAGES
+          value: "[\"en\",\"de\"]"
+      - equal:
+          path: data.TOKEN_STORAGE_KEY
+          value: "gsa-lite-access-token"
+      - equal:
+          path: data.REFRESH_TOKEN_STORAGE_KEY
+          value: "gsa-lite-refresh-token"

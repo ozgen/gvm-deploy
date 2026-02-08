@@ -1,7 +1,6 @@
 suite: scanner rbac
 templates:
   - templates/scanner-rbac.yaml
-
 tests:
   - it: renders ServiceAccount + Role + RoleBinding
     set:
@@ -10,7 +9,6 @@ tests:
     asserts:
       - hasDocuments:
           count: 3
-
       # --- ServiceAccount (doc 0) ---
       - isKind:
           of: ServiceAccount
@@ -23,7 +21,6 @@ tests:
           path: automountServiceAccountToken
           value: true
         documentIndex: 0
-
       # --- Role (doc 1) ---
       - isKind:
           of: Role
@@ -50,7 +47,6 @@ tests:
             - list
             - watch
         documentIndex: 1
-
       # --- RoleBinding (doc 2) ---
       - isKind:
           of: RoleBinding
@@ -67,7 +63,6 @@ tests:
           path: subjects[0].name
           value: openvas-sa
         documentIndex: 2
-
       - equal:
           path: roleRef.kind
           value: Role

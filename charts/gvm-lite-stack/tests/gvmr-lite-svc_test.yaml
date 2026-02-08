@@ -1,7 +1,6 @@
 suite: gvmr-lite service
 templates:
   - templates/gvmr-lite-svc.yaml
-
 tests:
   - it: does not render when gvmrLite is disabled
     set:
@@ -10,7 +9,6 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
-
   - it: renders Service when enabled with correct name/labels/selector
     set:
       gvmrLite:
@@ -34,7 +32,6 @@ tests:
       - equal:
           path: spec.type
           value: ClusterIP
-
   - it: exposes http port and targets named port http
     set:
       gvmrLite:
@@ -53,7 +50,6 @@ tests:
       - equal:
           path: spec.ports[0].targetPort
           value: http
-
   - it: supports different service types via values
     set:
       gvmrLite:

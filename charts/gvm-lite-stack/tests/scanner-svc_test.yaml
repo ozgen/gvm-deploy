@@ -1,7 +1,6 @@
 suite: scanner service
 templates:
   - templates/scanner-svc.yaml
-
 tests:
   - it: renders Service with selector app=openvas-service
     set:
@@ -22,7 +21,6 @@ tests:
       - equal:
           path: spec.type
           value: ClusterIP
-
   - it: exposes scanner port and targets named port scanner
     set:
       scanner:
@@ -40,7 +38,6 @@ tests:
       - equal:
           path: spec.ports[0].targetPort
           value: scanner
-
   - it: supports different service types via values
     set:
       scanner:

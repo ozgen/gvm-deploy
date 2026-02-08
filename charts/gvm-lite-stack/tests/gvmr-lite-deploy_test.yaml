@@ -1,7 +1,6 @@
 suite: gvmr-lite deployment
 templates:
   - templates/gvmr-lite-deploy.yaml
-
 tests:
   - it: does not render anything when gvmrLite is disabled
     set:
@@ -10,7 +9,6 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
-
   - it: renders Deployment when gvmrLite is enabled
     set:
       gvmrLite:
@@ -64,7 +62,6 @@ tests:
       - equal:
           path: spec.template.metadata.labels.app
           value: gvmr-lite
-
       # security context
       - equal:
           path: spec.template.spec.securityContext.fsGroup
@@ -72,7 +69,6 @@ tests:
       - equal:
           path: spec.template.spec.securityContext.fsGroupChangePolicy
           value: OnRootMismatch
-
       # initContainer
       - equal:
           path: spec.template.spec.initContainers[0].name
@@ -80,7 +76,6 @@ tests:
       - equal:
           path: spec.template.spec.initContainers[0].image
           value: busybox:1.36
-
       # main container image and port
       - equal:
           path: spec.template.spec.containers[0].name
@@ -94,7 +89,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].ports[0].containerPort
           value: 8084
-
       # jwt env and secret ref
       - contains:
           path: spec.template.spec.containers[0].env
@@ -114,7 +108,6 @@ tests:
               secretKeyRef:
                 name: gvmr-jwt
                 key: GVMR_JWT_SHARED_SECRET
-
       # volumes: report-formats always pvc, work emptyDir when pvc disabled
       - contains:
           path: spec.template.spec.volumes
@@ -127,7 +120,6 @@ tests:
           content:
             name: work
             emptyDir: {}
-
   - it: uses PVC for work volume when enabled
     set:
       gvmrLite:

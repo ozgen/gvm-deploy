@@ -1,7 +1,6 @@
 suite: gvmd-lite deployment
 templates:
   - templates/gvmd-lite-deploy.yaml
-
 tests:
   - it: renders Deployment named gvmd-lite with correct labels
     asserts:
@@ -19,7 +18,6 @@ tests:
       - equal:
           path: spec.template.metadata.labels.app
           value: gvmd-lite
-
   - it: sets container name, ports, and probes
     asserts:
       - equal:
@@ -30,21 +28,18 @@ tests:
           value: http
       - exists:
           path: spec.template.spec.containers[0].ports[0].containerPort
-
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.port
           value: http
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
           value: /api/public/documentation/index.html
-
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.port
           value: http
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.path
           value: /api/public/documentation/index.html
-
   # --- DB: internal (externalDb.enabled=false) ---
   - it: uses internal postgresql secret when externalDb is disabled
     set:
@@ -73,7 +68,6 @@ tests:
               secretKeyRef:
                 name: RELEASE-NAME-postgresql
                 key: postgres-password
-
   # --- DB: external (externalDb.enabled=true) ---
   - it: uses external DB settings and external password secret when enabled
     set:
@@ -115,7 +109,6 @@ tests:
               secretKeyRef:
                 name: external-db-secret
                 key: DB_PASSWORD
-
   # --- GVMR integration toggle ---
   - it: sets GVMR_ENABLED=0 and does NOT set GVMR_HOST when gvmrLite is disabled
     set:
@@ -131,7 +124,6 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: GVMR_HOST
-
   - it: sets GVMR_ENABLED=1 and sets host/port when gvmrLite is enabled
     set:
       gvmrLite:
@@ -166,7 +158,6 @@ tests:
           content:
             name: GVMR_API_KEY
             value: "secret"
-
   # --- Notification secrets appear only when enabled value provided ---
   - it: does not include SMTP_USERNAME/SMTP_PASSWORD envs when SMTP is disabled
     set:
@@ -182,7 +173,6 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: SMTP_PASSWORD
-
   - it: includes SMTP_USERNAME/SMTP_PASSWORD secret refs when SMTP enabled and secrets provided
     set:
       gvmdLite:
@@ -208,7 +198,6 @@ tests:
               secretKeyRef:
                 name: RELEASE-NAME-gvm-lite-stack-gvmd-secrets
                 key: SMTP_PASSWORD
-
   - it: always defines plugins volume and mount
     asserts:
       - contains:
@@ -222,7 +211,6 @@ tests:
             name: plugins
             persistentVolumeClaim:
               claimName: gvm-plugins-pvc
-
   - it: when gvmrLite enabled and exports.pvc.enabled=false, uses emptyDir for exports
     set:
       gvmrLite:
@@ -242,8 +230,7 @@ tests:
           path: spec.template.spec.volumes
           content:
             name: exports
-            emptyDir: { }
-
+            emptyDir: {}
   - it: when gvmrLite enabled and exports.pvc.enabled=true, uses pvc for exports
     set:
       gvmrLite:

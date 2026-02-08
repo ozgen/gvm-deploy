@@ -1,7 +1,6 @@
 suite: gsa-lite deployment
 templates:
   - templates/gsa-lite-deploy.yaml
-
 tests:
   - it: renders Deployment named gsa-lite with app label
     asserts:
@@ -13,7 +12,6 @@ tests:
       - equal:
           path: metadata.labels.app
           value: gsa-lite
-
   - it: selector and pod labels match app=gsa-lite
     asserts:
       - equal:
@@ -22,7 +20,6 @@ tests:
       - equal:
           path: spec.template.metadata.labels.app
           value: gsa-lite
-
   - it: uses defaults when values are empty
     set:
       gsaLite:
@@ -60,7 +57,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].ports[0].containerPort
           value: 80
-
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
           value: "/healthz"
@@ -73,7 +69,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.periodSeconds
           value: 10
-
       - equal:
           path: spec.template.spec.containers[0].resources.requests.cpu
           value: 100m
@@ -86,7 +81,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].resources.limits.memory
           value: 256Mi
-
   - it: uses provided values (non-default)
     set:
       gsaLite:
@@ -124,7 +118,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].ports[0].containerPort
           value: 8080
-
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
           value: "/ready"
@@ -134,7 +127,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.periodSeconds
           value: 7
-
       - equal:
           path: spec.template.spec.containers[0].resources.requests.cpu
           value: 250m

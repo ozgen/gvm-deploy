@@ -1,7 +1,6 @@
 suite: openvas-service deployment
 templates:
   - templates/scanner-deploy.yaml
-
 tests:
   - it: renders Deployment openvas-service with correct labels/selector
     set:
@@ -14,8 +13,8 @@ tests:
           port: 3001
       feed:
         pvc:
-          plugins: { name: gvm-plugins-pvc }
-          notus: { name: gvm-notus-pvc }
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
     asserts:
       - isKind:
           of: Deployment
@@ -28,17 +27,16 @@ tests:
       - equal:
           path: spec.template.metadata.labels.app
           value: openvas-service
-
   - it: sets serviceAccountName and networking defaults
     set:
       scanner:
         saName: openvas-sa
-        image: { repository: "ghcr.io/acme/openvas", tag: "1.0.0" }
-        service: { port: 3001 }
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
       feed:
         pvc:
-          plugins: { name: gvm-plugins-pvc }
-          notus: { name: gvm-notus-pvc }
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
     asserts:
       - equal:
           path: spec.template.spec.serviceAccountName
@@ -49,17 +47,16 @@ tests:
       - equal:
           path: spec.template.spec.dnsPolicy
           value: ClusterFirst
-
   - it: has initContainer stage-tools-if-needed with expected volume mounts
     set:
       scanner:
         saName: openvas-sa
-        image: { repository: "ghcr.io/acme/openvas", tag: "1.0.0" }
-        service: { port: 3001 }
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
       feed:
         pvc:
-          plugins: { name: gvm-plugins-pvc }
-          notus: { name: gvm-notus-pvc }
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
     asserts:
       - equal:
           path: spec.template.spec.initContainers[0].name
@@ -82,17 +79,16 @@ tests:
           content:
             name: nmap-file
             mountPath: /nmap-vol
-
   - it: has main container openvas with NET_RAW/NET_ADMIN and PATH env
     set:
       scanner:
         saName: openvas-sa
-        image: { repository: "ghcr.io/acme/openvas", tag: "1.0.0" }
-        service: { port: 3001 }
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
       feed:
         pvc:
-          plugins: { name: gvm-plugins-pvc }
-          notus: { name: gvm-notus-pvc }
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
     asserts:
       - equal:
           path: spec.template.spec.containers[0].name
@@ -106,7 +102,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].ports[0].containerPort
           value: 3001
-
       - equal:
           path: spec.template.spec.containers[0].securityContext.runAsUser
           value: 0
@@ -116,30 +111,27 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
           value: true
-
       - contains:
           path: spec.template.spec.containers[0].securityContext.capabilities.add
           content: NET_RAW
       - contains:
           path: spec.template.spec.containers[0].securityContext.capabilities.add
           content: NET_ADMIN
-
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: PATH
             value: "/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
   - it: mounts redis.conf from configmap via subPath and marks it readOnly
     set:
       scanner:
         saName: openvas-sa
-        image: { repository: "ghcr.io/acme/openvas", tag: "1.0.0" }
-        service: { port: 3001 }
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
       feed:
         pvc:
-          plugins: { name: gvm-plugins-pvc }
-          notus: { name: gvm-notus-pvc }
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
     asserts:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
@@ -157,17 +149,16 @@ tests:
               items:
                 - key: redis.conf
                   path: redis.conf
-
   - it: uses PVCs for plugins/notus and emptyDir for runtime dirs
     set:
       scanner:
         saName: openvas-sa
-        image: { repository: "ghcr.io/acme/openvas", tag: "1.0.0" }
-        service: { port: 3001 }
+        image: {repository: "ghcr.io/acme/openvas", tag: "1.0.0"}
+        service: {port: 3001}
       feed:
         pvc:
-          plugins: { name: gvm-plugins-pvc }
-          notus: { name: gvm-notus-pvc }
+          plugins: {name: gvm-plugins-pvc}
+          notus: {name: gvm-notus-pvc}
     asserts:
       - contains:
           path: spec.template.spec.volumes
@@ -181,34 +172,33 @@ tests:
             name: notus
             persistentVolumeClaim:
               claimName: gvm-notus-pvc
-
       - contains:
           path: spec.template.spec.volumes
           content:
             name: varlog
-            emptyDir: { }
+            emptyDir: {}
       - contains:
           path: spec.template.spec.volumes
           content:
             name: run-redis
-            emptyDir: { }
+            emptyDir: {}
       - contains:
           path: spec.template.spec.volumes
           content:
             name: run-ospd
-            emptyDir: { }
+            emptyDir: {}
       - contains:
           path: spec.template.spec.volumes
           content:
             name: tools
-            emptyDir: { }
+            emptyDir: {}
       - contains:
           path: spec.template.spec.volumes
           content:
             name: usr-local-sbin-vol
-            emptyDir: { }
+            emptyDir: {}
       - contains:
           path: spec.template.spec.volumes
           content:
             name: nmap-file
-            emptyDir: { }
+            emptyDir: {}

@@ -1,7 +1,6 @@
 suite: gsa-lite service
 templates:
   - templates/gsa-lite-svc.yaml
-
 tests:
   - it: renders Service named gsa-lite with correct labels and selector
     asserts:
@@ -16,7 +15,6 @@ tests:
       - equal:
           path: spec.selector.app
           value: gsa-lite
-
   - it: renders service port mapping (http to targetPort http)
     set:
       gsaLite:
@@ -38,7 +36,6 @@ tests:
           value: http
       - notExists:
           path: spec.ports[0].nodePort
-
   - it: includes nodePort only when type is NodePort and nodePort is set
     set:
       gsaLite:
@@ -56,7 +53,6 @@ tests:
       - equal:
           path: spec.ports[0].nodePort
           value: 30080
-
   - it: does NOT include nodePort when type is NodePort but nodePort is empty
     set:
       gsaLite:

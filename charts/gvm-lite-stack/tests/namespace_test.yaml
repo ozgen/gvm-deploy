@@ -1,7 +1,6 @@
 suite: namespace
 templates:
   - templates/namespace.yaml
-
 tests:
   - it: renders a Namespace with release namespace as name
     asserts:

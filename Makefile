@@ -1,6 +1,6 @@
 CHART_DIR := charts/gvm-lite-stack
 
-.PHONY: fmt fmt-check lint test render validate check
+.PHONY: fmt fmt-check lint test render validate check cover
 
 fmt:
 	@command -v yamlfmt >/dev/null 2>&1 || (echo "yamlfmt not installed" && exit 1)
@@ -32,3 +32,6 @@ validate:
 	helm template $(CHART_DIR) | kubeconform -strict -ignore-missing-schemas
 
 check: fmt-check lint test validate
+
+cover:
+	./scripts/helm_test_coverage.sh $(CHART_DIR)

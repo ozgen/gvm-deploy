@@ -1,0 +1,54 @@
+suite: scanner service
+templates:
+  - templates/scanner-svc.yaml
+
+tests:
+  - it: renders Service with selector app=openvas-service
+    set:
+      scanner:
+        service:
+          name: openvas-service
+          port: 3001
+          type: ClusterIP
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: openvas-service
+      - equal:
+          path: spec.selector.app
+          value: openvas-service
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: exposes scanner port and targets named port scanner
+    set:
+      scanner:
+        service:
+          name: openvas-service
+          port: 3001
+          type: ClusterIP
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: scanner
+      - equal:
+          path: spec.ports[0].port
+          value: 3001
+      - equal:
+          path: spec.ports[0].targetPort
+          value: scanner
+
+  - it: supports different service types via values
+    set:
+      scanner:
+        service:
+          name: openvas-service
+          port: 3001
+          type: NodePort
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort

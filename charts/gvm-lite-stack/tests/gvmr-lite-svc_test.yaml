@@ -1,0 +1,68 @@
+suite: gvmr-lite service
+templates:
+  - templates/gvmr-lite-svc.yaml
+
+tests:
+  - it: does not render when gvmrLite is disabled
+    set:
+      gvmrLite:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders Service when enabled with correct name/labels/selector
+    set:
+      gvmrLite:
+        enabled: true
+        service:
+          name: gvmr-lite
+          port: 8084
+          type: ClusterIP
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: gvmr-lite
+      - equal:
+          path: metadata.labels.app
+          value: gvmr-lite
+      - equal:
+          path: spec.selector.app
+          value: gvmr-lite
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: exposes http port and targets named port http
+    set:
+      gvmrLite:
+        enabled: true
+        service:
+          name: gvmr-lite
+          port: 8084
+          type: ClusterIP
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: http
+      - equal:
+          path: spec.ports[0].port
+          value: 8084
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+
+  - it: supports different service types via values
+    set:
+      gvmrLite:
+        enabled: true
+        service:
+          name: gvmr-lite
+          port: 8084
+          type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer

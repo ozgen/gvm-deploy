@@ -9,7 +9,7 @@ tests:
           plugins: {name: gvm-plugins-pvc, size: 10Gi}
           notus: {name: gvm-notus-pvc, size: 5Gi}
           logs: {name: gvm-log-pvc, size: 1Gi}
-          reportFormats: {name: gvm-report-formats-pvc, size: 2Gi}
+          reportFormats: {name: gvm-gvm-pvc, size: 1Gi}
       gvmrLite:
         enabled: false
         pvc:
@@ -60,11 +60,11 @@ tests:
         documentIndex: 3
       - equal:
           path: metadata.name
-          value: gvm-report-formats-pvc
+          value: gvm-gvm-pvc
         documentIndex: 3
       - equal:
           path: spec.resources.requests.storage
-          value: 2Gi
+          value: 1Gi
         documentIndex: 3
   - it: adds work PVC as 5th document only when enabled
     set:
@@ -73,7 +73,7 @@ tests:
           plugins: {name: gvm-plugins-pvc, size: 10Gi}
           notus: {name: gvm-notus-pvc, size: 5Gi}
           logs: {name: gvm-log-pvc, size: 1Gi}
-          reportFormats: {name: gvm-report-formats-pvc, size: 2Gi}
+          reportFormats: {name: gvm-gvm-pvc, size: 1Gi}
       gvmrLite:
         enabled: true
         pvc:
@@ -103,7 +103,7 @@ tests:
           plugins: {name: gvm-plugins-pvc, size: 10Gi}
           notus: {name: gvm-notus-pvc, size: 5Gi}
           logs: {name: gvm-log-pvc, size: 1Gi}
-          reportFormats: {name: gvm-report-formats-pvc, size: 2Gi}
+          reportFormats: {name: gvm-gvm-pvc, size: 1Gi}
       gvmrLite:
         enabled: true
         pvc:
@@ -133,7 +133,7 @@ tests:
           plugins: {name: gvm-plugins-pvc, size: 10Gi}
           notus: {name: gvm-notus-pvc, size: 5Gi}
           logs: {name: gvm-log-pvc, size: 1Gi}
-          reportFormats: {name: gvm-report-formats-pvc, size: 2Gi}
+          reportFormats: {name: gvm-gvm-pvc, size: 2Gi}
       gvmrLite:
         enabled: true
         pvc:

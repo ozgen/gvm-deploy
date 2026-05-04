@@ -49,7 +49,7 @@ tests:
       feed:
         pvc:
           reportFormats:
-            name: "gvm-report-formats-pvc"
+            name: "gvm-gvm-pvc"
     asserts:
       - isKind:
           of: Deployment
@@ -114,7 +114,7 @@ tests:
           content:
             name: report-formats
             persistentVolumeClaim:
-              claimName: gvm-report-formats-pvc
+              claimName: gvm-gvm-pvc
       - contains:
           path: spec.template.spec.volumes
           content:

@@ -15,6 +15,9 @@ spec:
       labels:
         app: gvmd-lite
     spec:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: api
           image: "{{ .Values.gvmdLite.image.repository }}:{{ .Values.gvmdLite.image.tag }}"
@@ -63,6 +66,8 @@ spec:
               value: {{ .Values.gvmdLite.env.FEED_VT_METADATA_PATH | quote }}
             - name: FEED_SCAN_CONFIG_DIR
               value: {{ .Values.gvmdLite.env.FEED_SCAN_CONFIG_DIR | quote }}
+            - name: FEED_XML_SCAN_CONFIG_DIR
+              value: {{ .Values.gvmdLite.env.FEED_XML_SCAN_CONFIG_DIR | quote }}
             - name: LOG_LEVEL
               value: {{ .Values.gvmdLite.env.LOG_LEVEL | quote }}
             - name: RUNNING_ENV
@@ -201,11 +206,17 @@ spec:
             - name: exports
               mountPath: {{ .Values.gvmdLite.exports.dir }}
             {{- end }}
+            # report formats from feed PVC (read-only)
+            - name: scan-configs
+              mountPath: /var/lib/gvm
 
       volumes:
         - name: plugins
           persistentVolumeClaim:
             claimName: {{ default .Values.feed.pvc.plugins.name .Values.gvmdLite.pvcPluginsName }}
+        - name: scan-configs
+          persistentVolumeClaim:
+            claimName: {{ .Values.feed.pvc.gvm.name }}
 
         {{- if .Values.gvmrLite.enabled }}
         - name: exports

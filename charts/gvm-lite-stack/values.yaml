@@ -15,7 +15,7 @@ feed:
     plugins: {name: gvm-plugins-pvc, size: 5Gi}
     notus: {name: gvm-notus-pvc, size: 2Gi}
     logs: {name: gvm-log-pvc, size: 1Gi}
-    reportFormats: {name: gvm-report-formats-pvc, size: 1Gi}
+    gvm: {name: gvm-gvm-pvc, size: 1Gi}
   readiness:
     initialDelaySeconds: 10
     periodSeconds: 30
@@ -166,6 +166,7 @@ gvmdLite:
     ENABLE_CVSS3_1: "1"
     FEED_VT_METADATA_PATH: "/var/lib/openvas/plugins/vt-metadata.json"
     FEED_SCAN_CONFIG_DIR: ""
+    FEED_XML_SCAN_CONFIG_DIR: "/var/lib/gvm/data-objects/gvmd/scan-configs"
     LOG_LEVEL: "info"
     # Email (SMTP) - default disabled
     SMTP_ENABLED: "0"

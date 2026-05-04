@@ -18,16 +18,39 @@ tests:
       - equal:
           path: spec.template.metadata.labels.app
           value: gvmd-lite
-  - it: sets container name, ports, and probes
+  - it: sets pod security context for mounted feed volume access
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 999
+      - equal:
+          path: spec.template.spec.securityContext.fsGroupChangePolicy
+          value: OnRootMismatch
+  - it: sets container name, image, ports, and probes
+    set:
+      gvmdLite:
+        image:
+          repository: gvmd-lite-test
+          tag: test-tag
+          pullPolicy: IfNotPresent
+        service:
+          port: 9390
     asserts:
       - equal:
           path: spec.template.spec.containers[0].name
           value: api
       - equal:
+          path: spec.template.spec.containers[0].image
+          value: gvmd-lite-test:test-tag
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+      - equal:
           path: spec.template.spec.containers[0].ports[0].name
           value: http
-      - exists:
+      - equal:
           path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 9390
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.port
           value: http
@@ -40,16 +63,100 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.path
           value: /api/public/documentation/index.html
-  # --- DB: internal (externalDb.enabled=false) ---
-  - it: uses internal postgresql secret when externalDb is disabled
+  - it: sets common application environment variables
     set:
+      gvmdLite:
+        service:
+          port: 9390
+        env:
+          JWT_TOKEN_TIME: "15"
+          REFRESH_TOKEN_TIME: "60"
+          ENABLE_CVSS3_1: "1"
+          FEED_VT_METADATA_PATH: /var/lib/gvm/vt-metadata.json
+          FEED_SCAN_CONFIG_DIR: /var/lib/gvm/scan-configs
+          FEED_XML_SCAN_CONFIG_DIR: /var/lib/gvm/xml-scan-configs
+          LOG_LEVEL: debug
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SERVER_PORT
+            value: "9390"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: JWT_TOKEN_TIME
+            value: "15"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REFRESH_TOKEN_TIME
+            value: "60"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_CVSS3_1
+            value: "1"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FEED_VT_METADATA_PATH
+            value: /var/lib/gvm/vt-metadata.json
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FEED_SCAN_CONFIG_DIR
+            value: /var/lib/gvm/scan-configs
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FEED_XML_SCAN_CONFIG_DIR
+            value: /var/lib/gvm/xml-scan-configs
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOG_LEVEL
+            value: debug
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RUNNING_ENV
+            value: k8s
+  - it: sets scanner host and port using service fqdn
+    set:
+      clusterDomain: cluster.local
+      scanner:
+        service:
+          name: openvasd
+          port: 3000
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SCANNER_HOST
+            value: openvasd.NAMESPACE.svc.cluster.local
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SCANNER_PORT
+            value: "3000"
+  # --- DB: internal (externalDb.enabled=false) ---
+  - it: uses internal postgresql settings and postgres password secret when externalDb is disabled
+    set:
+      clusterDomain: cluster.local
       gvmdLite:
         externalDb:
           enabled: false
       postgresql:
         auth:
           username: postgres
+          database: gvmd
     asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_HOST
+            value: RELEASE-NAME-postgresql.NAMESPACE.svc.cluster.local
       - contains:
           path: spec.template.spec.containers[0].env
           content:
@@ -59,7 +166,12 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: DB_USER
-            value: "postgres"
+            value: postgres
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_NAME
+            value: gvmd
       - contains:
           path: spec.template.spec.containers[0].env
           content:
@@ -68,6 +180,29 @@ tests:
               secretKeyRef:
                 name: RELEASE-NAME-postgresql
                 key: postgres-password
+  - it: uses internal postgresql password key when username is not postgres
+    set:
+      gvmdLite:
+        externalDb:
+          enabled: false
+      postgresql:
+        auth:
+          username: gvmd
+          database: gvmd
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_USER
+            value: gvmd
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-postgresql
+                key: password
   # --- DB: external (externalDb.enabled=true) ---
   - it: uses external DB settings and external password secret when enabled
     set:
@@ -85,7 +220,7 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: DB_HOST
-            value: "db.example.local"
+            value: db.example.local
       - contains:
           path: spec.template.spec.containers[0].env
           content:
@@ -95,12 +230,12 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: DB_USER
-            value: "gvmd"
+            value: gvmd
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: DB_NAME
-            value: "gvmd_db"
+            value: gvmd_db
       - contains:
           path: spec.template.spec.containers[0].env
           content:
@@ -110,7 +245,7 @@ tests:
                 name: external-db-secret
                 key: DB_PASSWORD
   # --- GVMR integration toggle ---
-  - it: sets GVMR_ENABLED=0 and does NOT set GVMR_HOST when gvmrLite is disabled
+  - it: sets GVMR_ENABLED=0 and does not set GVMR_HOST when gvmrLite is disabled
     set:
       gvmrLite:
         enabled: false
@@ -124,7 +259,7 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: GVMR_HOST
-  - it: sets GVMR_ENABLED=1 and sets host/port when gvmrLite is enabled
+  - it: sets GVMR api key envs when gvmrLite is enabled with api_key auth
     set:
       gvmrLite:
         enabled: true
@@ -133,10 +268,10 @@ tests:
           port: "8089"
       gvmdLite:
         gvmr:
-          authMode: "api_key"
-          apiKeyHeader: "X-API-Key"
+          authMode: api_key
+          apiKeyHeader: X-API-Key
           timeoutSeconds: "10"
-          apiKey: "secret"
+          apiKey: secret
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
@@ -146,24 +281,139 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
+            name: GVMR_HOST
+            value: gvmr-lite.NAMESPACE.svc.cluster.local
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
             name: GVMR_PORT
             value: "8089"
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: GVMR_AUTH_MODE
-            value: "api_key"
+            value: api_key
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GVMR_API_KEY_HEADER
+            value: X-API-Key
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GVMR_TIMEOUT_SECONDS
+            value: "10"
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: GVMR_API_KEY
-            value: "secret"
-  # --- Notification secrets appear only when enabled value provided ---
+            value: secret
+  - it: sets GVMR jwt secret refs when gvmrLite is enabled with jwt auth
+    set:
+      gvmrLite:
+        enabled: true
+        service:
+          name: gvmr-lite
+          port: "8089"
+      gvmdLite:
+        gvmr:
+          authMode: jwt
+          apiKeyHeader: X-API-Key
+          timeoutSeconds: "10"
+          jwt:
+            issuer: gvmd-lite
+            audience: gvmr-lite
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GVMR_AUTH_MODE
+            value: jwt
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GVMR_JWT_ISSUER
+            value: gvmd-lite
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GVMR_JWT_AUDIENCE
+            value: gvmr-lite
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GVMR_JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: gvmr-jwt
+                key: GVMR_JWT_SHARED_SECRET
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GVMR_API_KEY
+  # --- Notification non-secret envs ---
+  - it: renders notification non-secret environment variables
+    set:
+      gvmdLite:
+        env:
+          SMTP_ENABLED: "1"
+          SMTP_HOST: smtp.example.local
+          SMTP_PORT: "587"
+          SMTP_FROM: gvmd@example.local
+          SLACK_ENABLED: "1"
+          AZURE_STORAGE_ACCOUNT_NAME: storageaccount
+          AZURE_CONTAINER_NAME: reports
+          AZURE_CONTAINER_ENABLED: "1"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_ENABLED
+            value: "1"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_HOST
+            value: smtp.example.local
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_PORT
+            value: "587"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_FROM
+            value: gvmd@example.local
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SLACK_ENABLED
+            value: "1"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AZURE_STORAGE_ACCOUNT_NAME
+            value: storageaccount
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AZURE_CONTAINER_NAME
+            value: reports
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AZURE_CONTAINER_ENABLED
+            value: "1"
+  # --- Notification secrets ---
   - it: does not include SMTP_USERNAME/SMTP_PASSWORD envs when SMTP is disabled
     set:
       gvmdLite:
         env:
           SMTP_ENABLED: "0"
+        secrets:
+          SMTP_USERNAME: x
+          SMTP_PASSWORD: y
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].env
@@ -179,8 +429,8 @@ tests:
         env:
           SMTP_ENABLED: "1"
         secrets:
-          SMTP_USERNAME: "x"
-          SMTP_PASSWORD: "y"
+          SMTP_USERNAME: x
+          SMTP_PASSWORD: y
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
@@ -198,6 +448,80 @@ tests:
               secretKeyRef:
                 name: RELEASE-NAME-gvm-lite-stack-gvmd-secrets
                 key: SMTP_PASSWORD
+  - it: does not include SMTP secret envs when SMTP enabled but secret values are empty
+    set:
+      gvmdLite:
+        env:
+          SMTP_ENABLED: "1"
+        secrets:
+          SMTP_USERNAME: ""
+          SMTP_PASSWORD: ""
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_USERNAME
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SMTP_PASSWORD
+  - it: includes Slack webhook secret ref when Slack enabled and secret provided
+    set:
+      gvmdLite:
+        env:
+          SLACK_ENABLED: "1"
+        secrets:
+          SLACK_WEBHOOK_URL: https://hooks.slack.test/example
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SLACK_WEBHOOK_URL
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-gvm-lite-stack-gvmd-secrets
+                key: SLACK_WEBHOOK_URL
+  - it: does not include Slack webhook secret when Slack is disabled
+    set:
+      gvmdLite:
+        env:
+          SLACK_ENABLED: "0"
+        secrets:
+          SLACK_WEBHOOK_URL: https://hooks.slack.test/example
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SLACK_WEBHOOK_URL
+  - it: includes Azure access key secret ref when Azure container enabled and secret provided
+    set:
+      gvmdLite:
+        env:
+          AZURE_CONTAINER_ENABLED: "1"
+        secrets:
+          AZURE_CONTAINER_ACCESS_KEY: azure-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AZURE_CONTAINER_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-gvm-lite-stack-gvmd-secrets
+                key: AZURE_CONTAINER_ACCESS_KEY
+  - it: does not include Azure access key secret when Azure container is disabled
+    set:
+      gvmdLite:
+        env:
+          AZURE_CONTAINER_ENABLED: "0"
+        secrets:
+          AZURE_CONTAINER_ACCESS_KEY: azure-secret
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AZURE_CONTAINER_ACCESS_KEY
+  # --- Volumes and mounts ---
   - it: always defines plugins volume and mount
     asserts:
       - contains:
@@ -211,6 +535,43 @@ tests:
             name: plugins
             persistentVolumeClaim:
               claimName: gvm-plugins-pvc
+  - it: supports overriding plugins pvc name
+    set:
+      gvmdLite:
+        pvcPluginsName: custom-plugins-pvc
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: plugins
+            persistentVolumeClaim:
+              claimName: custom-plugins-pvc
+  - it: always defines scan-configs volume and mount
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: scan-configs
+            mountPath: /var/lib/gvm
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: scan-configs
+            persistentVolumeClaim:
+              claimName: gvm-gvm-pvc
+  - it: when gvmrLite disabled, does not mount exports volume
+    set:
+      gvmrLite:
+        enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: exports
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: exports
   - it: when gvmrLite enabled and exports.pvc.enabled=false, uses emptyDir for exports
     set:
       gvmrLite:
@@ -221,6 +582,11 @@ tests:
           pvc:
             enabled: false
     asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPORT_DIR
+            value: /exports
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
@@ -242,6 +608,11 @@ tests:
             enabled: true
             name: gvmd-exports-pvc
     asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: exports
+            mountPath: /exports
       - contains:
           path: spec.template.spec.volumes
           content:

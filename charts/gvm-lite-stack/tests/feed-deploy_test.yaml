@@ -65,7 +65,7 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
-            name: report-formats
+            name: gvm
             mountPath: /var/lib/gvm
   - it: defines PVC-backed volumes with claimNames
     asserts:
@@ -90,6 +90,6 @@ tests:
       - contains:
           path: spec.template.spec.volumes
           content:
-            name: report-formats
+            name: gvm
             persistentVolumeClaim:
-              claimName: gvm-report-formats-pvc
+              claimName: gvm-gvm-pvc

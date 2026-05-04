@@ -14,23 +14,26 @@ Helm chart that deploys a lightweight Greenbone stack on Kubernetes:
 ## Prerequisites
 
 ### Required
+
 - **Helm** (v3.x)
-  - Verify: `helm version`
+    - Verify: `helm version`
 - **helm-unittest** plugin (for unit tests)
-  - Install: `helm plugin install https://github.com/helm-unittest/helm-unittest`
-  - Verify: `helm plugin list | grep unittest`
+    - Install: `helm plugin install https://github.com/helm-unittest/helm-unittest`
+    - Verify: `helm plugin list | grep unittest`
 
 ### Recommended
-- **kubeconform** (validates rendered manifests against Kubernetes schemas)
-  - macOS (Homebrew): `brew install kubeconform`
-  - Linux: install from GitHub releases (see CI workflow)
-  - Verify: `kubeconform -v`
-- **yamlfmt** (formats / checks YAML style)
-  - Install (Go): `go install github.com/google/yamlfmt/cmd/yamlfmt@latest`
-  - Ensure it’s on PATH: `export PATH="$PATH:$HOME/go/bin"`
-  - Verify: `yamlfmt -version` (or `yamlfmt --version`)
 
-> Note: Helm templates under `charts/**/templates/` are **not valid YAML** until rendered, so formatting is applied only to `Chart.yaml`, `values*.yaml`, and `tests/**/*.yaml`.
+- **kubeconform** (validates rendered manifests against Kubernetes schemas)
+    - macOS (Homebrew): `brew install kubeconform`
+    - Linux: install from GitHub releases (see CI workflow)
+    - Verify: `kubeconform -v`
+- **yamlfmt** (formats / checks YAML style)
+    - Install (Go): `go install github.com/google/yamlfmt/cmd/yamlfmt@latest`
+    - Ensure it’s on PATH: `export PATH="$PATH:$HOME/go/bin"`
+    - Verify: `yamlfmt -version` (or `yamlfmt --version`)
+
+> Note: Helm templates under `charts/**/templates/` are **not valid YAML** until rendered, so formatting is applied only
+> to `Chart.yaml`, `values*.yaml`, and `tests/**/*.yaml`.
 
 ---
 
@@ -41,35 +44,42 @@ This repository uses a Makefile to keep common actions consistent locally and in
 > Chart location: `charts/gvm-lite-stack`
 
 ### Format (non-template YAML only)
+
 - Format files in-place:
-  - `make fmt`
+    - `make fmt`
 - Check formatting (CI-style; fails if formatting would change):
-  - `make fmt-check`
+    - `make fmt-check`
 
 ### Lint
+
 - Run Helm lint:
-  - `make lint`
+    - `make lint`
 
 ### Unit tests
+
 - Run Helm unit tests:
-  - `make test`
+    - `make test`
 
 ### Render manifests
+
 - Render the chart to a local file:
-  - `make render`
-  - Output: `/tmp/gvm-lite-stack.rendered.yaml`
+    - `make render`
+    - Output: `/tmp/gvm-lite-stack.rendered.yaml`
 
 ### Schema validation (rendered output)
+
 - Validate rendered manifests with kubeconform:
-  - `make validate`
+    - `make validate`
 
 ### Coverage gate (Helm template coverage)
+
 - Ensure every template has at least one unit test referencing it:
-  - `make coverage`
+    - `make coverage`
 
 ### Full local check (recommended before pushing)
+
 - Run everything CI expects:
-  - `make check`
+    - `make check`
 
 ---
 
@@ -304,14 +314,14 @@ gvmdLite:
 
 The chart creates the following PVCs by default:
 
-| Component             | Purpose                   | Size |
-|-----------------------|---------------------------| ---- |
-| PostgreSQL            | Database storage          | 8Gi  |
-| Feed – plugins        | NVT feed data             | 5Gi  |
-| Feed – notus          | Notus feed data           | 2Gi  |
-| Feed – report-formats | Report format feed data   | 1Gi  |
-| Feed – logs           | Feed sync logs            | 1Gi  |
-| gvmr-lite – work      | Report rendering work dir | 1Gi  |
+| Component        | Purpose                                  | Size |
+|------------------|------------------------------------------|------|
+| PostgreSQL       | Database storage                         | 8Gi  |
+| Feed – plugins   | NVT feed data                            | 5Gi  |
+| Feed – notus     | Notus feed data                          | 2Gi  |
+| Feed – gvm       | Report format and scan configs feed data | 1Gi  |
+| Feed – logs      | Feed sync logs                           | 1Gi  |
+| gvmr-lite – work | Report rendering work dir                | 1Gi  |
 
 PVC sizes can be adjusted in `values.yaml` as needed.
 

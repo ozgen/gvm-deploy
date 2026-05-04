@@ -95,7 +95,7 @@ spec:
       volumes:
         - name: report-formats
           persistentVolumeClaim:
-            claimName: {{ .Values.feed.pvc.reportFormats.name }}
+            claimName: {{ .Values.feed.pvc.gvm.name }}
 
         - name: work
           {{- if .Values.gvmrLite.pvc.work.enabled }}

@@ -108,6 +108,11 @@ tests:
               secretKeyRef:
                 name: gvmr-jwt
                 key: GVMR_JWT_SHARED_SECRET
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GVMR_EXPERIMENTAL_ENABLED
+            value: "true"
       # volumes: report-formats always pvc, work emptyDir when pvc disabled
       - contains:
           path: spec.template.spec.volumes

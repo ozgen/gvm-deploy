@@ -222,7 +222,7 @@ gsaLite:
 gvmrLite:
   enabled: true
   image:
-    repository: ozgenm/gvmr-lite
+    repository: ozgenm/gvmr-lite-rs
     tag: latest
     pullPolicy: IfNotPresent
   resources:
@@ -254,6 +254,7 @@ gvmrLite:
     GVMR_WORK_DIR: "/tmp/gvmr-lite/work"
     GVMR_REBUILD_ON_START: "true"
     GVMR_AUTH_MODE: "jwt"
+    GVMR_EXPERIMENTAL_ENABLED: "true"
   jwt:
     sharedSecret: "supersecret_shared_between_services"
   pvc:

@@ -49,6 +49,8 @@ spec:
               value: {{ .Values.gvmdLite.gvmr.jwt.audience | quote }}
             - name: GVMR_JWT_ISSUER
               value: {{ .Values.gvmdLite.gvmr.jwt.issuer | quote }}
+            - name: GVMR_EXPERIMENTAL_ENABLED
+              value: {{ .Values.gvmrLite.env.GVMR_EXPERIMENTAL_ENABLED | quote }}
 
             # JWT shared secret from Secret
             - name: GVMR_JWT_SECRET

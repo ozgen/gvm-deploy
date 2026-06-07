@@ -68,6 +68,8 @@ spec:
               value: {{ .Values.gvmdLite.env.FEED_SCAN_CONFIG_DIR | quote }}
             - name: FEED_XML_SCAN_CONFIG_DIR
               value: {{ .Values.gvmdLite.env.FEED_XML_SCAN_CONFIG_DIR | quote }}
+            - name: FEED_XML_PORT_LIST_DIR
+              value: {{ .Values.gvmdLite.env.FEED_XML_PORT_LIST_DIR | quote }}
             - name: LOG_LEVEL
               value: {{ .Values.gvmdLite.env.LOG_LEVEL | quote }}
             - name: RUNNING_ENV

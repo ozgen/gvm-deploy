@@ -75,6 +75,7 @@ tests:
           FEED_VT_METADATA_PATH: /var/lib/gvm/vt-metadata.json
           FEED_SCAN_CONFIG_DIR: /var/lib/gvm/scan-configs
           FEED_XML_SCAN_CONFIG_DIR: /var/lib/gvm/xml-scan-configs
+          FEED_XML_PORT_LIST_DIR: /var/lib/gvm/xml-port-lists
           LOG_LEVEL: debug
     asserts:
       - contains:
@@ -112,6 +113,11 @@ tests:
           content:
             name: FEED_XML_SCAN_CONFIG_DIR
             value: /var/lib/gvm/xml-scan-configs
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: FEED_XML_PORT_LIST_DIR
+            value: /var/lib/gvm/xml-port-lists
       - contains:
           path: spec.template.spec.containers[0].env
           content:

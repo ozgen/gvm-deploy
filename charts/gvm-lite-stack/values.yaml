@@ -167,6 +167,7 @@ gvmdLite:
     FEED_VT_METADATA_PATH: "/var/lib/openvas/plugins/vt-metadata.json"
     FEED_SCAN_CONFIG_DIR: ""
     FEED_XML_SCAN_CONFIG_DIR: "/var/lib/gvm/data-objects/gvmd/scan-configs"
+    FEED_XML_PORT_LIST_DIR: "/var/lib/gvm/data-objects/gvmd/port-lists"
     LOG_LEVEL: "info"
     # Email (SMTP) - default disabled
     SMTP_ENABLED: "0"

@@ -187,6 +187,12 @@ gvmdLite:
     AZURE_STORAGE_ACCOUNT_NAME: ""
     AZURE_CONTAINER_NAME: ""
     AZURE_CONTAINER_ENABLED: "0"
+    # Audit log cleanup
+    AUDIT_LOG_CLEANUP_INTERVAL: "24h"
+    AUDIT_LOG_RETENTION_PERIOD: "4320h"
+    AUDIT_LOG_CLEANUP_BATCH_SIZE: "1000"
+    # Optional features
+    ENABLE_CONTAINER_SCANNING: "false"
 gsaLite:
   replicas: 1
   image:

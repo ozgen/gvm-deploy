@@ -128,6 +128,57 @@ tests:
           content:
             name: RUNNING_ENV
             value: k8s
+  - it: sets audit log cleanup and optional feature environment variables
+    set:
+      gvmdLite:
+        env:
+          AUDIT_LOG_CLEANUP_INTERVAL: "12h"
+          AUDIT_LOG_RETENTION_PERIOD: "720h"
+          AUDIT_LOG_CLEANUP_BATCH_SIZE: "500"
+          ENABLE_CONTAINER_SCANNING: "true"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUDIT_LOG_CLEANUP_INTERVAL
+            value: "12h"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUDIT_LOG_RETENTION_PERIOD
+            value: "720h"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUDIT_LOG_CLEANUP_BATCH_SIZE
+            value: "500"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_CONTAINER_SCANNING
+            value: "true"
+  - it: renders default audit log cleanup and container scanning environment values
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUDIT_LOG_CLEANUP_INTERVAL
+            value: "24h"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUDIT_LOG_RETENTION_PERIOD
+            value: "4320h"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AUDIT_LOG_CLEANUP_BATCH_SIZE
+            value: "1000"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_CONTAINER_SCANNING
+            value: "false"
   - it: sets scanner host and port using service fqdn
     set:
       clusterDomain: cluster.local

@@ -15,22 +15,26 @@ Helm chart that deploys a lightweight Greenbone stack on Kubernetes:
 
 ### Required
 
-- **Helm** (v3.x)
-    - Verify: `helm version`
-- **helm-unittest** plugin (for unit tests)
-    - Install: `helm plugin install https://github.com/helm-unittest/helm-unittest`
-    - Verify: `helm plugin list | grep unittest`
+* **Helm** (v3.x)
+
+    * Verify: `helm version`
+* **helm-unittest** plugin (for unit tests)
+
+    * Install: `helm plugin install https://github.com/helm-unittest/helm-unittest`
+    * Verify: `helm plugin list | grep unittest`
 
 ### Recommended
 
-- **kubeconform** (validates rendered manifests against Kubernetes schemas)
-    - macOS (Homebrew): `brew install kubeconform`
-    - Linux: install from GitHub releases (see CI workflow)
-    - Verify: `kubeconform -v`
-- **yamlfmt** (formats / checks YAML style)
-    - Install (Go): `go install github.com/google/yamlfmt/cmd/yamlfmt@latest`
-    - Ensure it’s on PATH: `export PATH="$PATH:$HOME/go/bin"`
-    - Verify: `yamlfmt -version` (or `yamlfmt --version`)
+* **kubeconform** (validates rendered manifests against Kubernetes schemas)
+
+    * macOS (Homebrew): `brew install kubeconform`
+    * Linux: install from GitHub releases (see CI workflow)
+    * Verify: `kubeconform -v`
+* **yamlfmt** (formats / checks YAML style)
+
+    * Install (Go): `go install github.com/google/yamlfmt/cmd/yamlfmt@latest`
+    * Ensure it’s on PATH: `export PATH="$PATH:$HOME/go/bin"`
+    * Verify: `yamlfmt -version` or `yamlfmt --version`
 
 > Note: Helm templates under `charts/**/templates/` are **not valid YAML** until rendered, so formatting is applied only
 > to `Chart.yaml`, `values*.yaml`, and `tests/**/*.yaml`.
@@ -43,49 +47,57 @@ This repository uses a Makefile to keep common actions consistent locally and in
 
 > Chart location: `charts/gvm-lite-stack`
 
-### Format (non-template YAML only)
+### Format non-template YAML only
 
-- Format files in-place:
-    - `make fmt`
-- Check formatting (CI-style; fails if formatting would change):
-    - `make fmt-check`
+* Format files in-place:
+
+    * `make fmt`
+* Check formatting CI-style, fails if formatting would change:
+
+    * `make fmt-check`
 
 ### Lint
 
-- Run Helm lint:
-    - `make lint`
+* Run Helm lint:
+
+    * `make lint`
 
 ### Unit tests
 
-- Run Helm unit tests:
-    - `make test`
+* Run Helm unit tests:
+
+    * `make test`
 
 ### Render manifests
 
-- Render the chart to a local file:
-    - `make render`
-    - Output: `/tmp/gvm-lite-stack.rendered.yaml`
+* Render the chart to a local file:
 
-### Schema validation (rendered output)
+    * `make render`
+    * Output: `/tmp/gvm-lite-stack.rendered.yaml`
 
-- Validate rendered manifests with kubeconform:
-    - `make validate`
+### Schema validation rendered output
 
-### Coverage gate (Helm template coverage)
+* Validate rendered manifests with kubeconform:
 
-- Ensure every template has at least one unit test referencing it:
-    - `make coverage`
+    * `make validate`
 
-### Full local check (recommended before pushing)
+### Coverage gate Helm template coverage
 
-- Run everything CI expects:
-    - `make check`
+* Ensure every template has at least one unit test referencing it:
+
+    * `make coverage`
+
+### Full local check recommended before pushing
+
+* Run everything CI expects:
+
+    * `make check`
 
 ---
 
 ## Chart tree
 
-```
+```text
 charts/
   gvm-lite-stack/
     Chart.yaml
@@ -106,13 +118,19 @@ helm dependency build
 
 ---
 
-## Render manifests (no deploy)
+## Render manifests no deploy
 
 ```bash
 helm template gvm ../gvm-lite-stack -n gvm > gvm-lite-stack.yaml
-# or from repo root
+```
+
+Or from the repository root:
+
+```bash
 helm template gvm charts/gvm-lite-stack -n gvm > gvm-lite-stack.yaml
 ```
+
+Render with explicit values:
 
 ```bash
 helm template gvm charts/gvm-lite-stack -n gvm \
@@ -121,7 +139,7 @@ helm template gvm charts/gvm-lite-stack -n gvm \
 
 ---
 
-## Deploy (default values.yaml)
+## Deploy default values.yaml
 
 ```bash
 helm install gvm charts/gvm-lite-stack -n gvm --create-namespace \
@@ -152,14 +170,14 @@ kubectl get svc -n gvm
 
 Service endpoints inside the cluster:
 
-* Frontend (NodePort): **gsa-lite** to node port **30080**
+* Frontend NodePort: **gsa-lite** to node port **30080**
 * API service: `gvmd-lite.gvm.svc.cluster.local:8082`
 * Report-render service: `gvmr-lite.gvm.svc.cluster.local:8084`
 * Scanner service: `openvas-service.gvm.svc.cluster.local:3001`
 
 ---
 
-## Development loop with local images (Minikube)
+## Development loop with local images Minikube
 
 Build images **inside** Minikube and point the chart at those tags:
 
@@ -168,9 +186,9 @@ eval "$(minikube docker-env)"
 
 docker build -t ozgenm/gvmd-lite:dev path/to/gvmd-lite
 docker build -t ozgenm/gvmr-lite:dev path/to/gvmr-lite
-docker build -t ozgenm/scanner:dev   path/to/scanner
-docker build -t ozgenm/feed-img:dev  path/to/feed
-docker build -t gsa-lite:prod        path/to/gsa
+docker build -t ozgenm/scanner:dev path/to/scanner
+docker build -t ozgenm/feed-img:dev path/to/feed
+docker build -t gsa-lite:prod path/to/gsa
 ```
 
 Deploy using local images:
@@ -193,6 +211,52 @@ helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
 
 ---
 
+## Container scanning / OCI image targets
+
+Container scanning support is optional and requires a `gvmd-lite` image built with the `container_scanning` build tag.
+
+By default, container scanning is disabled:
+
+```yaml
+gvmdLite:
+  env:
+    ENABLE_CONTAINER_SCANNING: "false"
+```
+
+To enable container scanning, use the feature image and enable the runtime flag:
+
+```bash
+helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
+  --set gvmdLite.image.repository=ozgenm/gvmd-lite-features \
+  --set gvmdLite.image.tag=latest \
+  --set gvmdLite.env.ENABLE_CONTAINER_SCANNING="true"
+```
+
+Or configure it in `values.yaml`:
+
+```yaml
+gvmdLite:
+  image:
+    repository: ozgenm/gvmd-lite-features
+    tag: latest
+  env:
+    ENABLE_CONTAINER_SCANNING: "true"
+```
+
+Both parts are required:
+
+| Requirement                       | Why                                                                         |
+|-----------------------------------|-----------------------------------------------------------------------------|
+| `ozgenm/gvmd-lite-features` image | Contains the backend code compiled with the `container_scanning` build tag. |
+| `ENABLE_CONTAINER_SCANNING=true`  | Enables the feature at runtime.                                             |
+
+Setting `ENABLE_CONTAINER_SCANNING=true` while still using the default `ozgenm/gvmd-lite` image is not enough, because
+the container scanning code is not compiled into that image.
+
+When enabled, OCI image target APIs and related frontend features become available.
+
+---
+
 ## PostgreSQL dependency
 
 This chart includes the **Bitnami PostgreSQL** Helm chart as a dependency:
@@ -205,7 +269,7 @@ dependencies:
     condition: postgresql.enabled
 ```
 
-### Default (enabled)
+### Default enabled
 
 ```yaml
 postgresql:
@@ -213,7 +277,7 @@ postgresql:
   architecture: standalone
   auth:
     username: gvmd
-    password: gvmdpw   # override in production
+    password: gvmdpw # override in production
     database: gvmd-lite-service
   primary:
     persistence:
@@ -223,15 +287,15 @@ postgresql:
 
 This creates:
 
-* a StatefulSet (`gvm-postgresql-0`)
-* a Service (`gvm-postgresql`)
+* a StatefulSet: `gvm-postgresql-0`
+* a Service: `gvm-postgresql`
 * a Secret containing DB credentials
 
 `gvmd-lite` automatically connects to this DB when enabled.
 
 ---
 
-## External PostgreSQL (optional)
+## External PostgreSQL optional
 
 ```bash
 helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
@@ -247,7 +311,7 @@ helm upgrade --install gvm charts/gvm-lite-stack -n gvm --create-namespace \
 
 ---
 
-## Notification integrations (optional)
+## Notification integrations optional
 
 `gvmd-lite` supports outbound notifications via **SMTP**, **Slack**, and **Azure Blob Storage**.
 All integrations are **disabled by default**.
@@ -292,25 +356,41 @@ gvmdLite:
 
 ## Troubleshooting quick commands
 
-* Render with debug:
+Render with debug:
 
-  ```bash
-  helm template gvm charts/gvm-lite-stack -n gvm --debug
-  ```
-* Watch rollout:
+```bash
+helm template gvm charts/gvm-lite-stack -n gvm --debug
+```
 
-  ```bash
-  kubectl -n gvm rollout status deploy/gvmd-lite
-  ```
-* Describe pod issues:
+Watch rollout:
 
-  ```bash
-  kubectl -n gvm describe pod -l app=gvmd-lite
-  ```
+```bash
+kubectl -n gvm rollout status deploy/gvmd-lite
+```
+
+Describe pod issues:
+
+```bash
+kubectl -n gvm describe pod -l app=gvmd-lite
+```
+
+Check API logs:
+
+```bash
+kubectl -n gvm logs deploy/gvmd-lite
+```
+
+Check mounted feed directories:
+
+```bash
+kubectl -n gvm exec deploy/gvmd-lite -- ls -la /var/lib/openvas/plugins
+kubectl -n gvm exec deploy/gvmd-lite -- ls -la /var/lib/notus/advisories
+kubectl -n gvm exec deploy/gvmd-lite -- ls -la /var/lib/gvm
+```
 
 ---
 
-## Persistent Volume Claims (PVCs)
+## Persistent Volume Claims PVCs
 
 The chart creates the following PVCs by default:
 
@@ -324,5 +404,3 @@ The chart creates the following PVCs by default:
 | gvmr-lite – work | Report rendering work dir                | 1Gi  |
 
 PVC sizes can be adjusted in `values.yaml` as needed.
-
----

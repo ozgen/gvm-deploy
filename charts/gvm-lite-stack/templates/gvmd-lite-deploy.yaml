@@ -74,6 +74,17 @@ spec:
               value: {{ .Values.gvmdLite.env.LOG_LEVEL | quote }}
             - name: RUNNING_ENV
               value: "k8s"
+            # ---- Audit log cleanup ----
+            - name: AUDIT_LOG_CLEANUP_INTERVAL
+              value: {{ .Values.gvmdLite.env.AUDIT_LOG_CLEANUP_INTERVAL | quote }}
+            - name: AUDIT_LOG_RETENTION_PERIOD
+              value: {{ .Values.gvmdLite.env.AUDIT_LOG_RETENTION_PERIOD | quote }}
+            - name: AUDIT_LOG_CLEANUP_BATCH_SIZE
+              value: {{ .Values.gvmdLite.env.AUDIT_LOG_CLEANUP_BATCH_SIZE | quote }}
+
+            # ---- Optional features ----
+            - name: ENABLE_CONTAINER_SCANNING
+              value: {{ .Values.gvmdLite.env.ENABLE_CONTAINER_SCANNING | quote }}
 
             # ---- Exports ----
             {{- if .Values.gvmrLite.enabled }}
@@ -203,6 +214,8 @@ spec:
           volumeMounts:
             - name: plugins
               mountPath: /var/lib/openvas/plugins
+            - name: notus
+              mountPath: /var/lib/notus
             # exports dir
             {{- if .Values.gvmrLite.enabled }}
             - name: exports
@@ -216,6 +229,9 @@ spec:
         - name: plugins
           persistentVolumeClaim:
             claimName: {{ default .Values.feed.pvc.plugins.name .Values.gvmdLite.pvcPluginsName }}
+        - name: notus
+          persistentVolumeClaim:
+            claimName: {{ .Values.feed.pvc.notus.name }}
         - name: scan-configs
           persistentVolumeClaim:
             claimName: {{ .Values.feed.pvc.gvm.name }}

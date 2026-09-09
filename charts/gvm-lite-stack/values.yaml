@@ -4,7 +4,7 @@ feed:
   fsGroup: 1000
   fsGroupChangePolicy: OnRootMismatch
   init:
-    image: busybox:1.36
+    image: busybox:1.38
   rsyncTempDir: /tmp
   image:
     repository: ozgenm/feed-img

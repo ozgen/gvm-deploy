@@ -35,7 +35,7 @@ tests:
           value: 0
       - equal:
           path: spec.template.spec.initContainers[0].image
-          value: "busybox:1.36"
+          value: "busybox:1.38"
   - it: includes main container feed with readiness and liveness probes
     asserts:
       - equal:

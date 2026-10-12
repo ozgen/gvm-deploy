@@ -26,6 +26,6 @@ annotations:
   licenses: AGPL-3.0-only
 dependencies:
   - name: postgresql
-    version: 18.10.0
+    version: 18.12.4
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: postgresql.enabled

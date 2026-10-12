@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Greenbone AG
+#
+# SPDX-License-Identifier: AGPL-3.0-only
 suite: openvas-service deployment
 templates:
   - templates/scanner-deploy.yaml

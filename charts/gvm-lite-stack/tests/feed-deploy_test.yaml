@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Greenbone AG
+#
+# SPDX-License-Identifier: AGPL-3.0-only
 suite: feed-service deployment
 templates:
   - templates/feed-deploy.yaml
@@ -35,7 +38,7 @@ tests:
           value: 0
       - equal:
           path: spec.template.spec.initContainers[0].image
-          value: "busybox:1.38"
+          value: "busybox:1.36"
   - it: includes main container feed with readiness and liveness probes
     asserts:
       - equal:

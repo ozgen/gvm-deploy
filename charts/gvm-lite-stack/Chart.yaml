@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Greenbone AG
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+
 apiVersion: v2
 name: gvm-lite-stack
 description: A Helm chart for Kubernetes
@@ -19,8 +23,10 @@ version: 0.1.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
+annotations:
+  licenses: AGPL-3.0-only
 dependencies:
   - name: postgresql
-    version: 18.12.4
+    version: 18.10.0
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: postgresql.enabled

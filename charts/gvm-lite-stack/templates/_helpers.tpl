@@ -1,3 +1,9 @@
+{{/*
+SPDX-FileCopyrightText: 2026 Greenbone AG
+
+SPDX-License-Identifier: AGPL-3.0-only
+*/}}
+
 {{- define "gvm-lite-stack.name" -}}
 {{- .Chart.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

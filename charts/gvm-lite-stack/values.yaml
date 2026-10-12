@@ -1,10 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Greenbone AG
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+
 namespace: gvm
 clusterDomain: cluster.local
 feed:
   fsGroup: 1000
   fsGroupChangePolicy: OnRootMismatch
   init:
-    image: busybox:1.38
+    image: busybox:1.36
   rsyncTempDir: /tmp
   image:
     repository: ozgenm/feed-img

@@ -404,3 +404,8 @@ The chart creates the following PVCs by default:
 | gvmr-lite – work | Report rendering work dir                | 1Gi  |
 
 PVC sizes can be adjusted in `values.yaml` as needed.
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 only
+(`AGPL-3.0-only`). See [LICENSE](./LICENSE) for the full license text.
